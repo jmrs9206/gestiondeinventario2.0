@@ -37,3 +37,11 @@ dist/
 
 # Docker
 .docker/
+
+# Documentation and markdown files
+docs/
+*.md
+**/*.md
+!README.md
+!**/README.md
+
