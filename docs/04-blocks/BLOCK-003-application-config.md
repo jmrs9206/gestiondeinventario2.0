@@ -7,7 +7,7 @@
     ## Estado
 
 ```text
-PENDING
+DONE
 ```
 
 ## Objetivo

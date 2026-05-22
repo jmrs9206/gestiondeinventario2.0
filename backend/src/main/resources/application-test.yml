@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    # URL will be overridden if we use Testcontainers, but we set a default H2 database in memory for simple unit tests
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  flyway:
+    enabled: false
