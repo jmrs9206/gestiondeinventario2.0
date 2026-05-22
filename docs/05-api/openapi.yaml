@@ -1,0 +1,252 @@
+openapi: 3.0.3
+info:
+  title: VDEnergy Inventory API
+  version: 1.0.0
+  description: API interna y pública para gestión de inventario VDEnergy.
+servers:
+  - url: https://inventario.vdenergy.es
+    description: Production
+  - url: http://localhost:8080
+    description: Local backend
+tags:
+  - name: Auth
+  - name: Users
+  - name: Offices
+  - name: Materials
+  - name: Inventory
+  - name: Audit
+  - name: Dashboard
+  - name: Public API
+paths:
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login usuario humano
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Tokens generados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Credenciales inválidas
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Renovar access token
+      responses:
+        '200':
+          description: Token renovado
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout y revocación refresh token
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logout correcto
+  /api/v1/users:
+    get:
+      tags: [Users]
+      summary: Listar usuarios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista usuarios
+    post:
+      tags: [Users]
+      summary: Crear usuario
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Usuario creado
+  /api/v1/offices:
+    get:
+      tags: [Offices]
+      summary: Listar oficinas
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista oficinas
+    post:
+      tags: [Offices]
+      summary: Crear oficina
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Oficina creada
+  /api/v1/materials:
+    get:
+      tags: [Materials]
+      summary: Listar materiales
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [OPERATIVO, ROTO, EN_REPARACION, BAJA]
+        - name: officeId
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista materiales
+    post:
+      tags: [Materials]
+      summary: Crear material y generar QR
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Material creado
+  /api/v1/materials/{publicCode}:
+    get:
+      tags: [Materials]
+      summary: Detalle material por publicCode
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detalle material
+        '404':
+          description: Material no encontrado
+  /api/v1/materials/{publicCode}/status:
+    patch:
+      tags: [Inventory]
+      summary: Cambiar estado material
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Estado actualizado
+  /api/v1/materials/{publicCode}/history:
+    get:
+      tags: [Inventory]
+      summary: Historial material
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Historial material
+  /api/v1/dashboard/kpis:
+    get:
+      tags: [Dashboard]
+      summary: KPIs inventario
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Métricas dashboard
+  /api/v1/audit:
+    get:
+      tags: [Audit]
+      summary: Buscar auditoría
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Registros auditoría
+  /public-api/v1/users:
+    post:
+      tags: [Public API]
+      summary: Crear usuario desde integración externa
+      security:
+        - apiKeyAuth: []
+      responses:
+        '201':
+          description: Usuario creado
+        '403':
+          description: Scope insuficiente
+  /public-api/v1/materials:
+    get:
+      tags: [Public API]
+      summary: Consultar materiales desde integración externa
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Materiales
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          example: 900
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+        timestamp:
+          type: string
+          format: date-time
