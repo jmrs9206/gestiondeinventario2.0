@@ -1,7 +1,6 @@
 package com.vdenergy.inventory.users.entity;
 
 import com.vdenergy.inventory.common.entity.BaseEntity;
-import com.vdenergy.inventory.common.entity.UserRole;
 import jakarta.persistence.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -35,13 +34,13 @@ public class User extends BaseEntity implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
-    private UserRole role;
+    private Role role;
 
     // Constructors
     public User() {
     }
 
-    public User(String publicId, String firstName, String lastName, String email, String passwordHash, UserRole role) {
+    public User(String publicId, String firstName, String lastName, String email, String passwordHash, Role role) {
         this.publicId = publicId;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -135,11 +134,11 @@ public class User extends BaseEntity implements UserDetails {
         this.passwordHash = passwordHash;
     }
 
-    public UserRole getRole() {
+    public Role getRole() {
         return role;
     }
 
-    public void setRole(UserRole role) {
+    public void setRole(Role role) {
         this.role = role;
     }
 }

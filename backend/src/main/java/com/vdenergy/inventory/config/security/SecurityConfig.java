@@ -1,9 +1,14 @@
 package com.vdenergy.inventory.config.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vdenergy.inventory.audit.service.AuditService;
 import com.vdenergy.inventory.auth.filter.JwtFilter;
+import com.vdenergy.inventory.users.entity.User;
 import com.vdenergy.inventory.users.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -36,12 +41,15 @@ import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
-
+ 
     private final JwtFilter jwtFilter;
-
-    public SecurityConfig(JwtFilter jwtFilter) {
+    private final AuditService auditService;
+ 
+    public SecurityConfig(JwtFilter jwtFilter, AuditService auditService) {
         this.jwtFilter = jwtFilter;
+        this.auditService = auditService;
     }
 
     @Bean
@@ -128,6 +136,18 @@ public class SecurityConfig {
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
+            String ip = request.getRemoteAddr();
+            String userAgent = request.getHeader("User-Agent");
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String userId = "NONE";
+            String performedByType = "SYSTEM";
+            if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof User) {
+                User user = (User) auth.getPrincipal();
+                userId = user.getPublicId();
+                performedByType = "USER";
+            }
+            auditService.logEvent("User", userId, "ACCESS_DENIED", performedByType, userId, ip, userAgent);
+
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
