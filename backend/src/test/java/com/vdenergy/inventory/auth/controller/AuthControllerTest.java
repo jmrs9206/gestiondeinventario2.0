@@ -6,7 +6,7 @@ import com.vdenergy.inventory.auth.dto.LogoutRequest;
 import com.vdenergy.inventory.auth.dto.RefreshRequest;
 import com.vdenergy.inventory.auth.entity.RefreshToken;
 import com.vdenergy.inventory.auth.repository.RefreshTokenRepository;
-import com.vdenergy.inventory.common.entity.UserRole;
+import com.vdenergy.inventory.users.entity.Role;
 import com.vdenergy.inventory.users.entity.User;
 import com.vdenergy.inventory.users.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +20,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+import com.vdenergy.inventory.audit.service.AuditService;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -49,6 +53,9 @@ class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @SpyBean
+    private AuditService auditService;
+
     private User testUser;
 
     @BeforeEach
@@ -63,7 +70,7 @@ class AuthControllerTest {
                 "Doe",
                 "john.doe@vdenergy.es",
                 passwordEncoder.encode("SecurePassword123"),
-                UserRole.TECNICO
+                Role.TECNICO
         );
         testUser.setActive(true);
         testUser = userRepository.save(testUser);
@@ -203,5 +210,115 @@ class AuthControllerTest {
         mockMvc.perform(get("/api/v1/some-secure-url-that-doesnt-exist")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void unauthenticatedUserAccessingSecuredEndpointsReturns401() throws Exception {
+        mockMvc.perform(get("/api/v1/auth/admin-only"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("Unauthorized"));
+
+        mockMvc.perform(get("/api/v1/auth/tecnico-only"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("Unauthorized"));
+
+        mockMvc.perform(get("/api/v1/auth/authenticated"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("Unauthorized"));
+    }
+
+    @Test
+    void tecnicoUserHasAccessToTecnicoAndAuthenticatedButForbiddenFromAdmin() throws Exception {
+        // John Doe is TECNICO
+        LoginRequest loginRequest = new LoginRequest("john.doe@vdenergy.es", "SecurePassword123");
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String accessToken = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();
+
+        // 1. Check access to /tecnico-only (allowed)
+        mockMvc.perform(get("/api/v1/auth/tecnico-only")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Welcome Tecnico"));
+
+        // 2. Check access to /authenticated (allowed)
+        mockMvc.perform(get("/api/v1/auth/authenticated")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Welcome Authenticated"));
+
+        // 3. Check access to /admin-only (forbidden)
+        mockMvc.perform(get("/api/v1/auth/admin-only")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Forbidden"));
+
+        // Verify ACCESS_DENIED audit log event was logged
+        verify(auditService, atLeastOnce()).logEvent(
+                eq("User"),
+                eq(testUser.getPublicId()),
+                eq("ACCESS_DENIED"),
+                eq("USER"),
+                eq(testUser.getPublicId()),
+                any(),
+                any()
+        );
+    }
+
+    @Test
+    void adminUserHasAccessToAdminAndAuthenticatedButForbiddenFromTecnico() throws Exception {
+        // Create an ADMIN user
+        User adminUser = new User(
+                UUID.randomUUID().toString(),
+                "Admin",
+                "User",
+                "admin.user@vdenergy.es",
+                passwordEncoder.encode("AdminPassword123"),
+                Role.ADMIN
+        );
+        adminUser.setActive(true);
+        adminUser = userRepository.save(adminUser);
+
+        LoginRequest loginRequest = new LoginRequest("admin.user@vdenergy.es", "AdminPassword123");
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String accessToken = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();
+
+        // 1. Check access to /admin-only (allowed)
+        mockMvc.perform(get("/api/v1/auth/admin-only")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Welcome Admin"));
+
+        // 2. Check access to /authenticated (allowed)
+        mockMvc.perform(get("/api/v1/auth/authenticated")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Welcome Authenticated"));
+
+        // 3. Check access to /tecnico-only (forbidden)
+        mockMvc.perform(get("/api/v1/auth/tecnico-only")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Forbidden"));
+
+        // Verify ACCESS_DENIED audit log event was logged
+        verify(auditService, atLeastOnce()).logEvent(
+                eq("User"),
+                eq(adminUser.getPublicId()),
+                eq("ACCESS_DENIED"),
+                eq("USER"),
+                eq(adminUser.getPublicId()),
+                any(),
+                any()
+        );
     }
 }
