@@ -14,6 +14,7 @@ import com.vdenergy.inventory.offices.repository.OfficeRepository;
 import com.vdenergy.inventory.users.entity.Role;
 import com.vdenergy.inventory.users.entity.User;
 import com.vdenergy.inventory.users.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,6 +120,14 @@ class MaterialControllerTest {
         testOffice2 = officeRepository.save(testOffice2);
 
         reset(auditService);
+    }
+
+    @AfterEach
+    void tearDown() {
+        materialHistoryRepository.deleteAll();
+        materialRepository.deleteAll();
+        officeRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
