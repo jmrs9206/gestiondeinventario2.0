@@ -4,11 +4,14 @@ import com.vdenergy.inventory.audit.entity.AuditLog;
 import com.vdenergy.inventory.audit.repository.AuditLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuditService {
+
     private static final Logger log = LoggerFactory.getLogger(AuditService.class);
 
     private final AuditLogRepository auditLogRepository;
@@ -45,5 +48,10 @@ public class AuditService {
         );
 
         auditLogRepository.save(auditLog);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AuditLog> getAuditLogs(Pageable pageable) {
+        return auditLogRepository.findAll(pageable);
     }
 }
