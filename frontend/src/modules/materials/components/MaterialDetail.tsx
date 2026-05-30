@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   fetchMaterial,
@@ -41,7 +41,10 @@ export default function MaterialDetail({ publicCode }: MaterialDetailProps) {
 
   const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
+  const isMountedRef = useRef(true);
+
   const loadData = useCallback(async () => {
+    if (!isMountedRef.current) return;
     setLoading(true);
     setError(null);
     try {
@@ -49,20 +52,25 @@ export default function MaterialDetail({ publicCode }: MaterialDetailProps) {
         fetchMaterial(publicCode),
         fetchMaterialHistory(publicCode, 0, 100)
       ]);
+      if (!isMountedRef.current) return;
       setMaterial(matData);
       setHistory(histData.content || []);
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Error al cargar el detalle del material.');
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [publicCode]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadData();
-    }, 0);
-    return () => clearTimeout(timer);
+    isMountedRef.current = true;
+    loadData();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [loadData]);
 
   const handleRegenerateQr = async () => {
@@ -119,20 +127,24 @@ export default function MaterialDetail({ publicCode }: MaterialDetailProps) {
 
   const [qrBlobUrl, setQrBlobUrl] = useState<string>('');
   const qrBlobUrlRef = React.useRef<string | null>(null);
-
   // Fetch QR image as a blob with Auth header
-  const loadQrImage = useCallback(async () => {
+  const loadQrImage = useCallback(async (signal?: AbortSignal) => {
     if (!material) return;
     try {
       const token = localStorage.getItem('accessToken');
       const response = await fetch(`${BASE_URL}/api/v1/materials/${publicCode}/qr?width=300&height=300`, {
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        signal
       });
       if (response.ok) {
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
+        if (!isMountedRef.current) {
+          URL.revokeObjectURL(url);
+          return;
+        }
         if (qrBlobUrlRef.current) {
           URL.revokeObjectURL(qrBlobUrlRef.current);
         }
@@ -145,18 +157,16 @@ export default function MaterialDetail({ publicCode }: MaterialDetailProps) {
   }, [material, publicCode, BASE_URL]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadQrImage();
-    }, 0);
+    const controller = new AbortController();
+    loadQrImage(controller.signal);
     return () => {
-      clearTimeout(timer);
+      controller.abort();
       if (qrBlobUrlRef.current) {
         URL.revokeObjectURL(qrBlobUrlRef.current);
         qrBlobUrlRef.current = null;
       }
     };
   }, [loadQrImage]);
-
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'OPERATIVO':

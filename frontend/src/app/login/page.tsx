@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '../../modules/auth/hooks/useAuth';
+import { useAuth } from '@/modules/auth/hooks/useAuth';
 import { Lock, Mail, AlertCircle, Shield } from 'lucide-react';
 
 function LoginContent() {
@@ -86,12 +86,13 @@ function LoginContent() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email Field */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Correo Electrónico</label>
+              <label htmlFor="email" className="text-xs font-bold text-slate-400 uppercase tracking-wider">Correo Electrónico</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
                   <Mail className="h-4 w-4" />
                 </div>
                 <input
+                  id="email"
                   type="email"
                   required
                   value={email}
@@ -104,12 +105,13 @@ function LoginContent() {
 
             {/* Password Field */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Contraseña</label>
+              <label htmlFor="password" className="text-xs font-bold text-slate-400 uppercase tracking-wider">Contraseña</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
                   <Lock className="h-4 w-4" />
                 </div>
                 <input
+                  id="password"
                   type="password"
                   required
                   value={password}

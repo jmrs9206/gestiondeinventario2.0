@@ -39,10 +39,10 @@ export interface PaginatedResponse<T> {
   last: boolean;
 }
 
-export async function fetchDashboardKpis(): Promise<DashboardKpis> {
-  return apiFetch<DashboardKpis>('/api/v1/dashboard/kpis');
+export async function fetchDashboardKpis(signal?: AbortSignal): Promise<DashboardKpis> {
+  return apiFetch<DashboardKpis>('/api/v1/dashboard/kpis', { signal });
 }
 
-export async function fetchRecentMovements(limit: number = 10): Promise<PaginatedResponse<MaterialHistoryResponse>> {
-  return apiFetch<PaginatedResponse<MaterialHistoryResponse>>(`/api/v1/inventory/history?size=${limit}`);
+export async function fetchRecentMovements(limit: number = 10, signal?: AbortSignal): Promise<PaginatedResponse<MaterialHistoryResponse>> {
+  return apiFetch<PaginatedResponse<MaterialHistoryResponse>>(`/api/v1/inventory/history?size=${limit}`, { signal });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   fetchAuditLogs,
   AuditLogResponse
@@ -29,26 +29,34 @@ export default function AuditLogsTable() {
   // Expandable details state
   const [expandedLogIdx, setExpandedLogIdx] = useState<number | null>(null);
 
+  const isMountedRef = useRef(true);
+
   const loadLogs = useCallback(async () => {
+    if (!isMountedRef.current) return;
     setLoading(true);
     setError(null);
     try {
       const res = await fetchAuditLogs(page, 15);
+      if (!isMountedRef.current) return;
       setLogs(res.content || []);
       setTotalPages(res.totalPages || 0);
       setTotalElements(res.totalElements || 0);
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Error al cargar la bitácora de auditoría.');
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [page]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadLogs();
-    }, 0);
-    return () => clearTimeout(timer);
+    isMountedRef.current = true;
+    loadLogs();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [loadLogs]);
 
   const toggleExpand = (idx: number) => {

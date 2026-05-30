@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Package, AlertTriangle, Clock, Activity, RotateCw, Shield } from 'lucide-react';
 import {
   fetchDashboardKpis,
@@ -25,7 +25,10 @@ function DashboardPageContent() {
   const [selectedOffice, setSelectedOffice] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
 
+  const isMountedRef = useRef(true);
+
   const loadData = useCallback(async () => {
+    if (!isMountedRef.current) return;
     setLoading(true);
     setError(null);
     try {
@@ -33,6 +36,7 @@ function DashboardPageContent() {
       // We will read the token, and if missing, we can redirect or show an error.
       const token = localStorage.getItem('accessToken');
       if (!token) {
+        if (!isMountedRef.current) return;
         // Set a placeholder token for local testing if not running the full app flow yet,
         // or prompt the user. For robustness, if we get an Unauthorized error,
         // it redirects to login. Let's raise the error directly.
@@ -46,21 +50,30 @@ function DashboardPageContent() {
         fetchRecentMovements(10),
       ]);
 
+      if (!isMountedRef.current) return;
       setKpis(kpisData);
       setMovements(movementsData.content || []);
     } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // Ignored, component was unmounted
+        return;
+      }
+      if (!isMountedRef.current) return;
       const msg = err instanceof Error ? err.message : 'Error al cargar los datos del dashboard.';
       setError(msg);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadData();
-    }, 0);
-    return () => clearTimeout(timer);
+    isMountedRef.current = true;
+    loadData();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [loadData]);
 
   // Filter computations

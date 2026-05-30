@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   fetchUsers,
   createUser,
@@ -52,26 +52,34 @@ export default function UsersTable() {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const isMountedRef = useRef(true);
+
   const loadUsers = useCallback(async () => {
+    if (!isMountedRef.current) return;
     setLoading(true);
     setError(null);
     try {
       const res = await fetchUsers(page, 10);
+      if (!isMountedRef.current) return;
       setUsers(res.content || []);
       setTotalPages(res.totalPages || 0);
       setTotalElements(res.totalElements || 0);
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Error al cargar los usuarios.');
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [page]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadUsers();
-    }, 0);
-    return () => clearTimeout(timer);
+    isMountedRef.current = true;
+    loadUsers();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [loadUsers]);
 
   const handleOpenCreate = () => {

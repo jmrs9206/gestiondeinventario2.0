@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import {
   fetchMaterials,
@@ -57,9 +57,13 @@ export default function MaterialsTable() {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const isMountedRef = useRef(true);
+
   const loadOffices = useCallback(async () => {
+    if (!isMountedRef.current) return;
     try {
       const res = await fetchOffices(0, 100);
+      if (!isMountedRef.current) return;
       setOffices(res.content || []);
     } catch {
       // Non-blocking error
@@ -67,6 +71,7 @@ export default function MaterialsTable() {
   }, []);
 
   const loadMaterials = useCallback(async () => {
+    if (!isMountedRef.current) return;
     setLoading(true);
     setError(null);
     try {
@@ -78,29 +83,28 @@ export default function MaterialsTable() {
         page,
         size: 10
       });
+      if (!isMountedRef.current) return;
       setMaterials(res.content || []);
       setTotalPages(res.totalPages || 0);
       setTotalElements(res.totalElements || 0);
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Error al cargar los materiales.');
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [statusFilter, typeFilter, officeFilter, serialFilter, page]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadOffices();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [loadOffices]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      loadMaterials();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [loadMaterials]);
+    isMountedRef.current = true;
+    loadOffices();
+    loadMaterials();
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [loadOffices, loadMaterials]);
 
   const handleOpenCreate = () => {
     setFormType('');

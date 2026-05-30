@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   fetchOffices,
   createOffice,
@@ -39,26 +39,34 @@ export default function OfficesTable() {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const isMountedRef = useRef(true);
+
   const loadOffices = useCallback(async () => {
+    if (!isMountedRef.current) return;
     setLoading(true);
     setError(null);
     try {
       const res = await fetchOffices(page, 10);
+      if (!isMountedRef.current) return;
       setOffices(res.content || []);
       setTotalPages(res.totalPages || 0);
       setTotalElements(res.totalElements || 0);
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Error al cargar las oficinas.');
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [page]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadOffices();
-    }, 0);
-    return () => clearTimeout(timer);
+    isMountedRef.current = true;
+    loadOffices();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [loadOffices]);
 
   const handleOpenCreate = () => {

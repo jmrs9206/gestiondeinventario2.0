@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use, useState, useEffect, useCallback } from 'react';
+import React, { use, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/modules/auth/components/ProtectedRoute';
 import {
@@ -48,7 +48,10 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
   const [decommissionComment, setDecommissionComment] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const isMountedRef = useRef(true);
+
   const loadData = useCallback(async () => {
+    if (!isMountedRef.current) return;
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -57,22 +60,27 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
         fetchMaterial(publicCode),
         fetchOffices(0, 100)
       ]);
+      if (!isMountedRef.current) return;
       setMaterial(mat);
       setStatus(mat.status);
       setOfficeId(mat.officePublicId || '');
       setOffices(offs.content || []);
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Error al cargar el material escaneado.');
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [publicCode]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadData();
-    }, 0);
-    return () => clearTimeout(timer);
+    isMountedRef.current = true;
+    loadData();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [loadData]);
 
   const handleLogout = async () => {
