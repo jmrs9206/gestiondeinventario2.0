@@ -1,0 +1,1113 @@
+openapi: 3.0.3
+info:
+  title: VDEnergy Inventory API
+  version: 1.0.0
+  description: API interna y pública para gestión de inventario VDEnergy.
+  contact:
+    name: VDEnergy Support
+    email: soporte@vdenergy.es
+servers:
+  - url: https://inventario.vdenergy.es
+    description: Production
+  - url: http://localhost:8080
+    description: Local backend
+tags:
+  - name: Auth
+    description: Autenticación de usuarios humanos
+  - name: Users
+    description: Gestión de usuarios del sistema
+  - name: Offices
+    description: Gestión de sedes y oficinas
+  - name: Materials
+    description: Catálogo y ficha técnica de materiales
+  - name: Inventory
+    description: Movimientos de inventario, QR y trazabilidad
+  - name: Dashboard
+    description: Métricas agregadas y analítica
+  - name: Audit
+    description: Historial de eventos y auditoría global
+  - name: Public API
+    description: Endpoints de integración externa asegurados por API Key
+paths:
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login de usuario
+      description: Autentica un usuario con credenciales (email/password) y devuelve los tokens JWT de acceso y refresco.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Autenticación exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '400':
+          description: Solicitud mal formada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refrescar token de acceso
+      description: Genera un nuevo Access Token JWT utilizando la cookie httpOnly que contiene el Refresh Token.
+      operationId: refreshToken
+      responses:
+        '200':
+          description: Token renovado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    description: Nuevo token JWT de acceso.
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkB2ZGVuZXJneS5lcyIsImV4cCI6MTgwMDB9...
+        '401':
+          description: Token de refresco ausente o inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Cerrar sesión
+      description: Revoca el token de refresco actual y limpia las credenciales de la sesión.
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Cierre de sesión exitoso
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/users:
+    get:
+      tags: [Users]
+      summary: Listar todos los usuarios
+      description: Obtiene una lista paginada de todos los usuarios registrados en el sistema. (Solo administradores).
+      operationId: listUsers
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/sizeParam'
+      responses:
+        '200':
+          description: Lista de usuarios recuperada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageUserResponse'
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Permisos insuficientes (Requiere rol ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags: [Users]
+      summary: Registrar nuevo usuario
+      description: Registra un nuevo usuario en el sistema. (Solo administradores).
+      operationId: createUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: Usuario creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Datos de entrada no válidos o conflicto de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Email ya registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/users/{publicId}:
+    put:
+      tags: [Users]
+      summary: Actualizar usuario existente
+      description: Modifica los campos editables del perfil de un usuario.
+      operationId: updateUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          description: Identificador público UUID del usuario.
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: Usuario actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/users/{publicId}/status:
+    patch:
+      tags: [Users]
+      summary: Activar o desactivar usuario
+      description: Habilita o deshabilita la cuenta de un usuario para permitir o denegar el acceso.
+      operationId: toggleUserStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          description: Identificador público UUID del usuario.
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [active]
+              properties:
+                active:
+                  type: boolean
+                  description: Nuevo estado lógico de activación.
+                  example: false
+      responses:
+        '200':
+          description: Estado del usuario actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/offices:
+    get:
+      tags: [Offices]
+      summary: Listar todas las oficinas
+      description: Recupera una lista paginada de las sedes de la empresa.
+      operationId: listOffices
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/sizeParam'
+      responses:
+        '200':
+          description: Lista de oficinas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageOfficeResponse'
+    post:
+      tags: [Offices]
+      summary: Crear oficina
+      description: Registra una nueva sede en el sistema.
+      operationId: createOffice
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfficeCreateRequest'
+      responses:
+        '201':
+          description: Sede registrada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfficeResponse'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/offices/{publicId}:
+    put:
+      tags: [Offices]
+      summary: Actualizar nombre de oficina
+      description: Modifica los parámetros descriptivos de una oficina existente.
+      operationId: updateOffice
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          description: Identificador público de la sede.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfficeCreateRequest'
+      responses:
+        '200':
+          description: Oficina modificada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfficeResponse'
+        '404':
+          description: Sede no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/offices/{publicId}/status:
+    patch:
+      tags: [Offices]
+      summary: Cambiar estado activo de oficina
+      description: Activa o desactiva de forma lógica una sede.
+      operationId: toggleOfficeStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          description: Identificador público de la sede.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [active]
+              properties:
+                active:
+                  type: boolean
+                  description: Indica si la sede está disponible para asignaciones.
+                  example: false
+      responses:
+        '200':
+          description: Estado modificado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfficeResponse'
+
+  /api/v1/materials:
+    get:
+      tags: [Materials]
+      summary: Listar e investigar materiales de inventario
+      description: Devuelve una lista de materiales según los filtros opcionales aplicados.
+      operationId: listMaterials
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filtrar por estado físico.
+          required: false
+          schema:
+            type: string
+            enum: [OPERATIVO, ROTO, EN_REPARACION, BAJA]
+        - name: officePublicId
+          in: query
+          description: Filtrar por identificador de oficina asociada.
+          required: false
+          schema:
+            type: string
+        - name: materialType
+          in: query
+          description: Filtrar por tipo o categoría de equipo.
+          required: false
+          schema:
+            type: string
+        - name: serialNumber
+          in: query
+          description: Filtrar por coincidencia parcial de número de serie.
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/sizeParam'
+      responses:
+        '200':
+          description: Materiales encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageMaterialResponse'
+    post:
+      tags: [Materials]
+      summary: Registrar nuevo material
+      description: Da de alta un nuevo artículo, le asocia una oficina y auto-genera su código público y código QR único de inventario.
+      operationId: createMaterial
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaterialCreateRequest'
+      responses:
+        '201':
+          description: Material creado y registrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaterialResponse'
+        '400':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/materials/{publicCode}:
+    get:
+      tags: [Materials]
+      summary: Consultar detalle de un material
+      description: Obtiene la información técnica completa, estado y trazabilidad física del material por su código público.
+      operationId: getMaterial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicCode
+          in: path
+          required: true
+          description: Código único seguro de inventario (mat_XXXXXXXX).
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detalle del material
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaterialResponse'
+        '404':
+          description: Material no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    put:
+      tags: [Materials]
+      summary: Modificar información de material
+      description: Modifica los parámetros descriptivos, número de serie o asignación de sede de un equipo.
+      operationId: updateMaterial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicCode
+          in: path
+          required: true
+          description: Código único seguro de inventario (mat_XXXXXXXX).
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaterialCreateRequest'
+      responses:
+        '200':
+          description: Datos del material actualizados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaterialResponse'
+
+  /api/v1/materials/{publicCode}/status:
+    patch:
+      tags: [Inventory]
+      summary: Actualizar estado físico o de inventario
+      description: Registra una transición de estado en el equipo. Si el estado es 'BAJA' (Decommissioned), requiere ingresar una justificación textual.
+      operationId: updateMaterialStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicCode
+          in: path
+          required: true
+          description: Código único seguro de inventario (mat_XXXXXXXX).
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaterialStatusUpdateRequest'
+      responses:
+        '200':
+          description: Transición del estado del material completada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaterialResponse'
+        '400':
+          description: Transición inválida o parámetros ausentes (por ejemplo, comentario justificativo ausente en caso de BAJA)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/materials/{publicCode}/qr:
+    get:
+      tags: [Inventory]
+      summary: Recuperar imagen del código QR
+      description: Devuelve la imagen en formato PNG que contiene el código QR de trazabilidad rápida del material.
+      operationId: getMaterialQr
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicCode
+          in: path
+          required: true
+          description: Código único seguro de inventario (mat_XXXXXXXX).
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Imagen del QR binaria en PNG
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Material o código QR no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/materials/{publicCode}/qr/regenerate:
+    post:
+      tags: [Inventory]
+      summary: Regenerar código QR del material
+      description: Fuerza la recreación del código QR del artículo. Útil si se corrompió el archivo de almacenamiento.
+      operationId: regenerateMaterialQr
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicCode
+          in: path
+          required: true
+          description: Código único seguro de inventario (mat_XXXXXXXX).
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Código QR regenerado exitosamente
+        '404':
+          description: Material no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/materials/{publicCode}/history:
+    get:
+      tags: [Inventory]
+      summary: Obtener historial de movimientos del material
+      description: Recupera cronológicamente todos los traslados de oficina, transiciones de estado y comentarios justificativos vinculados al material.
+      operationId: getMaterialHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: publicCode
+          in: path
+          required: true
+          description: Código único seguro de inventario (mat_XXXXXXXX).
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de historial obtenida
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaterialHistoryResponse'
+
+  /api/v1/dashboard/kpis:
+    get:
+      tags: [Dashboard]
+      summary: Obtener KPIs analíticos principales
+      description: Recupera métricas numéricas globales para cuadros de mando (cantidad de equipos totales, operativos, rotos, en reparación, bajas y total de sedes).
+      operationId: getDashboardKpis
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Métricas consolidadas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiResponse'
+
+  /api/v1/audit:
+    get:
+      tags: [Audit]
+      summary: Consultar bitácora de auditoría del sistema
+      description: Recupera un registro cronológico paginado de eventos de auditoría (acciones, autores, IP, navegador, valores antes/después). Reservado para administradores.
+      operationId: getAuditLogs
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/sizeParam'
+      responses:
+        '200':
+          description: Registros de auditoría recuperados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageAuditLogResponse'
+        '403':
+          description: Permiso denegado (Requiere rol ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /public-api/v1/users:
+    post:
+      tags: [Public API]
+      summary: Crear usuario desde integración externa
+      description: Endpoint público para registrar usuarios desde sistemas ERP externos autorizados mediante API Key.
+      operationId: createPublicUser
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: Usuario creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '403':
+          description: API Key inválida o sin scope suficiente (`WRITE_USERS`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /public-api/v1/materials:
+    get:
+      tags: [Public API]
+      summary: Consultar catálogo de materiales externamente
+      description: Permite a integradores autorizados consultar el estado del catálogo completo de inventario.
+      operationId: listPublicMaterials
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/sizeParam'
+      responses:
+        '200':
+          description: Catálogo de materiales
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageMaterialResponse'
+        '403':
+          description: API Key inválida o sin scope suficiente (`READ_MATERIALS`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Introducir el Access Token JWT precedido del prefijo 'Bearer '.
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Clave de acceso estática para integradores externos autorizados.
+  parameters:
+    pageParam:
+      name: page
+      in: query
+      description: Número de página a consultar (base 0).
+      required: false
+      schema:
+        type: integer
+        default: 0
+    sizeParam:
+      name: size
+      in: query
+      description: Cantidad máxima de registros por página.
+      required: false
+      schema:
+        type: integer
+        default: 10
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Dirección de correo institucional del usuario.
+          example: admin@vdenergy.es
+        password:
+          type: string
+          format: password
+          description: Contraseña de la cuenta.
+          example: password123
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: Token de autenticación JWT para llamadas API subsiguientes.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refreshToken:
+          type: string
+          description: Token de refresco seguro de larga duración (enviado también en Cookie).
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ref...
+        tokenType:
+          type: string
+          description: Formato de autorización requerido.
+          example: Bearer
+        expiresIn:
+          type: integer
+          description: Tiempo de expiración del access token en segundos.
+          example: 900
+    UserResponse:
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+          example: e2c92a95-5dbd-4a18-912c-354f9a0a03bb
+        email:
+          type: string
+          format: email
+          example: tecnico@vdenergy.es
+        role:
+          type: string
+          enum: [ADMIN, TECNICO]
+          example: TECNICO
+        active:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-22T08:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-05-22T10:30:00Z"
+    UserCreateRequest:
+      type: object
+      required: [email, password, role]
+      properties:
+        email:
+          type: string
+          format: email
+          example: nuevo.tecnico@vdenergy.es
+        password:
+          type: string
+          minLength: 8
+          example: tEcNiCo2026!
+        role:
+          type: string
+          enum: [ADMIN, TECNICO]
+          example: TECNICO
+    UserUpdateRequest:
+      type: object
+      required: [email, role]
+      properties:
+        email:
+          type: string
+          format: email
+          example: modificado@vdenergy.es
+        role:
+          type: string
+          enum: [ADMIN, TECNICO]
+          example: ADMIN
+    OfficeResponse:
+      type: object
+      properties:
+        publicId:
+          type: string
+          example: off-c8d7e6f5
+        name:
+          type: string
+          example: Sede Central Madrid
+        active:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-22T08:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-05-22T08:00:00Z"
+    OfficeCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 100
+          example: Oficina de Getafe
+    MaterialResponse:
+      type: object
+      properties:
+        publicCode:
+          type: string
+          example: mat_a1b2c3d4
+        materialType:
+          type: string
+          example: Router
+        brand:
+          type: string
+          example: MikroTik
+        model:
+          type: string
+          example: RB4011
+        serialNumber:
+          type: string
+          example: SN_MIKRO_98765
+        description:
+          type: string
+          example: Router troncal de comunicación principal
+        status:
+          type: string
+          enum: [OPERATIVO, ROTO, EN_REPARACION, BAJA]
+          example: OPERATIVO
+        officePublicId:
+          type: string
+          example: off-c8d7e6f5
+        officeName:
+          type: string
+          example: Sede Central Madrid
+        createdByName:
+          type: string
+          example: Juan Pérez
+        updatedByName:
+          type: string
+          example: Juan Pérez
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-22T08:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-05-22T08:30:00Z"
+    MaterialCreateRequest:
+      type: object
+      required: [materialType, brand, model, serialNumber, officePublicId]
+      properties:
+        materialType:
+          type: string
+          example: Switch
+        brand:
+          type: string
+          example: Cisco
+        model:
+          type: string
+          example: Catalyst 2960L
+        serialNumber:
+          type: string
+          example: SN_CISCO_445566
+        description:
+          type: string
+          example: Switch PoE de 24 puertos
+        officePublicId:
+          type: string
+          example: off-c8d7e6f5
+    MaterialStatusUpdateRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [OPERATIVO, ROTO, EN_REPARACION, BAJA]
+          example: BAJA
+        comment:
+          type: string
+          description: Justificación textual del cambio de estado. Obligatorio si el estado es 'BAJA'.
+          example: Daño por sobretensión irrecuperable.
+    MaterialHistoryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 124
+        materialPublicCode:
+          type: string
+          example: mat_a1b2c3d4
+        statusBefore:
+          type: string
+          example: OPERATIVO
+        statusAfter:
+          type: string
+          example: BAJA
+        officeNameBefore:
+          type: string
+          example: Sede Central Madrid
+        officeNameAfter:
+          type: string
+          example: Sede Central Madrid
+        comment:
+          type: string
+          example: Retirado por obsolescencia tecnológica.
+        performedByName:
+          type: string
+          example: Juan Pérez
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-22T08:30:00Z"
+    KpiResponse:
+      type: object
+      properties:
+        totalMaterials:
+          type: integer
+          example: 154
+        operativoCount:
+          type: integer
+          example: 120
+        rotoCount:
+          type: integer
+          example: 14
+        enReparacionCount:
+          type: integer
+          example: 8
+        bajaCount:
+          type: integer
+          example: 12
+        totalOffices:
+          type: integer
+          example: 6
+    AuditLogResponse:
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+          example: 9a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d
+        entityType:
+          type: string
+          example: Material
+        entityId:
+          type: string
+          example: mat_a1b2c3d4
+        action:
+          type: string
+          example: MATERIAL_UPDATED
+        performedByName:
+          type: string
+          example: Juan Pérez
+        ip:
+          type: string
+          example: 192.168.1.45
+        userAgent:
+          type: string
+          example: Mozilla/5.0 (Windows NT 10.0; Win64; x64)...
+        oldValue:
+          type: string
+          example: '{"status":"OPERATIVO"}'
+        newValue:
+          type: string
+          example: '{"status":"ROTO"}'
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-22T08:30:00Z"
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: BAD_REQUEST
+            message:
+              type: string
+              example: La justificación es obligatoria para dar de baja un equipo.
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-05-22T08:30:01Z"
+    PageUserResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+        pageNumber:
+          type: integer
+          example: 0
+        pageSize:
+          type: integer
+          example: 10
+        totalElements:
+          type: integer
+          example: 5
+        totalPages:
+          type: integer
+          example: 1
+        last:
+          type: boolean
+          example: true
+    PageOfficeResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficeResponse'
+        pageNumber:
+          type: integer
+          example: 0
+        pageSize:
+          type: integer
+          example: 10
+        totalElements:
+          type: integer
+          example: 3
+        totalPages:
+          type: integer
+          example: 1
+        last:
+          type: boolean
+          example: true
+    PageMaterialResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaterialResponse'
+        pageNumber:
+          type: integer
+          example: 0
+        pageSize:
+          type: integer
+          example: 10
+        totalElements:
+          type: integer
+          example: 25
+        totalPages:
+          type: integer
+          example: 3
+        last:
+          type: boolean
+          example: false
+    PageAuditLogResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLogResponse'
+        pageNumber:
+          type: integer
+          example: 0
+        pageSize:
+          type: integer
+          example: 10
+        totalElements:
+          type: integer
+          example: 148
+        totalPages:
+          type: integer
+          example: 15
+        last:
+          type: boolean
+          example: false
