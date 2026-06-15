@@ -20,10 +20,10 @@ export default function Home() {
   }, [isAuthenticated, loading, router]);
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100">
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-900 dark:text-zinc-50">
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
-        <p className="text-sm text-slate-400">Redirigiendo...</p>
+        <p className="text-sm text-slate-500 dark:text-zinc-400">Redirigiendo...</p>
       </div>
     </div>
   );

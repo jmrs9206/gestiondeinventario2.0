@@ -1,6 +1,6 @@
 # BLOCK-001-spring-bootstrap.md
 
-    > Proyecto: VDEnergy Inventory Management System  
+    > Proyecto: StockFlow Inventory Management System  
     > Modo: Caveman Mode  
     > Fecha base: 2026-05-22
 

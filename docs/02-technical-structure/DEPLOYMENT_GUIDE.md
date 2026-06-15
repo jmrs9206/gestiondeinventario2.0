@@ -1,6 +1,6 @@
 # DEPLOYMENT_GUIDE.md
 
-    > Proyecto: VDEnergy Inventory Management System  
+    > Proyecto: StockFlow Inventory Management System  
     > Modo: Caveman Mode  
     > Fecha base: 2026-05-22
 
@@ -52,7 +52,7 @@ NEXT_PUBLIC_API_URL
 Dominio:
 
 ```text
-https://inventario.vdenergy.es
+https://inventario.tuempresa.com
 ```
 
 Obligatorio:
@@ -77,85 +77,50 @@ En entornos de producción, Nginx actúa como proxy inverso y punto de terminaci
 - Cifrado seguro utilizando protocolos TLSv1.2 y TLSv1.3.
 - Cabeceras de seguridad inyectadas (`Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`).
 
-### Generación de Certificados Let's Encrypt (Certbot)
+### Automatización de Certificados Let's Encrypt (Certbot Sidecar)
 
-Para obtener certificados SSL gratuitos y válidos, se recomienda utilizar Certbot en el servidor host:
+Para producción, el proyecto incluye un contenedor sidecar de Certbot automatizado en `docker-compose.prod.yml` que interactúa con Nginx de manera nativa:
 
-1. Instalar Certbot:
-   ```bash
-   sudo apt update
-   sudo apt install certbot
+1. **Reto ACME:** Nginx redirige el tráfico HTTP al puerto 443 pero permite la validación de retos en la ruta `.well-known/acme-challenge/` mapeada a una carpeta compartida en `/var/www/certbot`.
+2. **Renovación Automática:** El contenedor de Certbot se ejecuta de manera permanente en segundo plano, verificando la renovación de los certificados cada 12 horas:
+   ```yaml
+   certbot:
+     image: certbot/certbot:v2.10.0
+     volumes:
+       - ./docs/nginx/certs:/etc/letsencrypt
+       - ./docs/nginx/certbot-webroot:/var/www/certbot
+     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
    ```
-2. Obtener certificados usando el plugin `webroot` o de forma temporal deteniendo Nginx:
+
+### Gestión de Secretos en Producción
+
+Para evitar brechas de seguridad, **nunca** dejes archivos `.env` en claro en el servidor de producción. Docker Compose soporta la lectura de variables directamente desde el entorno del sistema operativo host:
+
+1. **Inyección por Entorno:** Define las variables de entorno en el host (mediante configuraciones de systemd, perfiles de usuario o el orquestador en la nube):
    ```bash
-   sudo certbot certonly --standalone -d inventario.vdenergy.es
+   export DB_PASSWORD="vd_db_p8F9qK2wX5mN7vT3"
+   export JWT_SECRET="un_secreto_largo_y_seguro"
+   export ADMIN_PASSWORD="vd_admin_z2X4m7P1v9R8s3T5"
    ```
-3. Mapear o copiar los certificados generados al directorio local configurado en los volúmenes del contenedor:
-   - Certificado completo: `/etc/letsencrypt/live/inventario.vdenergy.es/fullchain.pem` -> `docs/nginx/certs/fullchain.pem`
-   - Clave privada: `/etc/letsencrypt/live/inventario.vdenergy.es/privkey.pem` -> `docs/nginx/certs/privkey.pem`
-
-Para pruebas locales, se puede utilizar el script de certificados autofirmados:
-```bash
-./docs/nginx/generate-certs.sh
-```
-
-## Rotación de Logs de Docker
-
-Para evitar que los logs consuman todo el espacio en disco, configuramos el driver de logging de Docker en `docker-compose.prod.yml`:
-```yaml
-logging:
-  driver: "json-file"
-  options:
-    max-size: "10m"
-    max-file: "3"
-```
-Esto limita cada archivo de log a 10 Megabytes y conserva únicamente un histórico de las últimas 3 rotaciones por contenedor.
+2. **Ejecución:** Al ejecutar `docker compose -f docker-compose.prod.yml up -d`, Docker Compose tomará automáticamente estas variables del sistema para inyectarlas de forma segura en los contenedores.
 
 ## Backups Automatizados
 
-Para respaldar la base de datos de producción diariamente y mantener una retención de 7 días, se utiliza el siguiente script automatizado:
+Para respaldar la base de datos de producción diariamente, se utiliza el script dinámico [backup.sh](file:///home/jmrs/gestionDeInventario2.0/docs/backup.sh) localizado en la carpeta `docs/`.
 
 ### Script de Backup (`backup.sh`)
+El script carga las variables dinámicamente de tu `.env` (o variables inyectadas), determina el contenedor activo, evita errores de privilegios (`--no-tablespaces`) y comprime la salida:
+* Ruta: `docs/backup.sh`
 
-Ubicado en `docs/backup.sh` en el servidor host:
-```bash
-#!/bin/bash
-# Configuración del backup de base de datos
-BACKUP_DIR="/var/backups/vdenergy"
-DB_CONTAINER="vd_mysql_db_prod"
-DB_NAME="vdenergy_db"
-DB_USER="vd_admin"
-# Cargar contraseña desde el entorno o archivo seguro .env
-DB_PASSWORD=$(docker exec $DB_CONTAINER printenv MYSQL_PASSWORD)
-
-# Crear directorio de backup si no existe
-mkdir -p "$BACKUP_DIR"
-
-# Nombre del archivo con timestamp
-FILE_NAME="$BACKUP_DIR/backup-$(date +%F-%H%M%S).sql"
-
-echo "Iniciando backup de la base de datos..."
-docker exec $DB_CONTAINER mysqldump -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$FILE_NAME"
-
-if [ $? -eq 0 ]; then
-  echo "Backup completado exitosamente: $FILE_NAME"
-  # Comprimir el backup para ahorrar espacio
-  gzip "$FILE_NAME"
-else
-  echo "ERROR: Falló el backup de base de datos."
-  exit 1
-fi
-
-# Eliminar backups de más de 7 días de antigüedad
-find "$BACKUP_DIR" -type f -name "backup-*.sql.gz" -mtime +7 -exec rm {} \;
-echo "Limpieza de backups antiguos completada."
-```
+### Restauración (`restore.sh`)
+Para restaurar una copia de seguridad en caliente en cualquiera de los entornos:
+* Ruta: `docs/restore.sh`
+* Comando: `bash docs/restore.sh <ruta_al_archivo_backup.sql.gz>`
 
 ### Configuración del Cron Job
-
-Para ejecutar este script diariamente a las 02:00 AM, agregar la siguiente regla al crontab del sistema:
+Para ejecutar el respaldo automáticamente a las 02:00 AM todos los días:
 ```text
-0 2 * * * /bin/bash /home/user/gestionDeInventario2.0/docs/backup.sh >> /var/log/vdenergy-backup.log 2>&1
+0 2 * * * /bin/bash /home/user/gestionDeInventario2.0/docs/backup.sh >> /var/log/stockflow-backup.log 2>&1
 ```
 
 ## Validación post deploy

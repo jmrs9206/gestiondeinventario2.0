@@ -1,6 +1,6 @@
 # ADR-006-testing-and-quality-strategy.md
 
-    > Proyecto: VDEnergy Inventory Management System  
+    > Proyecto: StockFlow Inventory Management System  
     > Modo: Caveman Mode  
     > Fecha base: 2026-05-22
 

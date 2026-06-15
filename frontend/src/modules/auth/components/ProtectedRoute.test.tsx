@@ -62,7 +62,7 @@ describe('ProtectedRoute', () => {
 
   it('renders access denied message when user role is not allowed', () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { publicId: '1', email: 't@vdenergy.es', role: 'TECNICO' },
+      user: { publicId: '1', email: 't@tuempresa.com', role: 'TECNICO' },
       isAuthenticated: true,
       loading: false,
       login: vi.fn(),
@@ -82,7 +82,7 @@ describe('ProtectedRoute', () => {
 
   it('renders children when user is authenticated and role is allowed', () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { publicId: '1', email: 'a@vdenergy.es', role: 'ADMIN' },
+      user: { publicId: '1', email: 'a@tuempresa.com', role: 'ADMIN' },
       isAuthenticated: true,
       loading: false,
       login: vi.fn(),

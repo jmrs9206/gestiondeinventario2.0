@@ -1,6 +1,6 @@
 # BACKEND_STRUCTURE.md
 
-    > Proyecto: VDEnergy Inventory Management System  
+    > Proyecto: StockFlow Inventory Management System  
     > Modo: Caveman Mode  
     > Fecha base: 2026-05-22
 
@@ -27,7 +27,7 @@ Testcontainers
 ## Package raíz
 
 ```text
-com.vdenergy.inventory
+com.stockflow.inventory
 ```
 
 ## Estructura
@@ -36,7 +36,7 @@ com.vdenergy.inventory
 backend/
 ├── pom.xml
 ├── Dockerfile
-├── src/main/java/com/vdenergy/inventory
+├── src/main/java/com/stockflow/inventory
 │   ├── InventoryApplication.java
 │   ├── common
 │   ├── config
@@ -54,7 +54,7 @@ backend/
 │   ├── application-test.yml
 │   ├── application-prod.yml
 │   └── db/migration
-└── src/test/java/com/vdenergy/inventory
+└── src/test/java/com/stockflow/inventory
 ```
 
 ## Módulos

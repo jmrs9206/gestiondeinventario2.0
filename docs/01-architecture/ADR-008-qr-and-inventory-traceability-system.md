@@ -1,6 +1,6 @@
 # ADR-008-qr-and-inventory-traceability-system.md
 
-    > Proyecto: VDEnergy Inventory Management System  
+    > Proyecto: StockFlow Inventory Management System  
     > Modo: Caveman Mode  
     > Fecha base: 2026-05-22
 
@@ -17,7 +17,7 @@ Los códigos no deben ser adivinables.
 
 ## Decisión
 
-Cada material tendrá un `public_code` aleatorio seguro y QR con URL `https://inventario.vdenergy.es/i/{publicCode}`.
+Cada material tendrá un `public_code` aleatorio seguro y QR con URL `https://inventario.tuempresa.com/i/{publicCode}`.
 
 ## Reglas derivadas
 

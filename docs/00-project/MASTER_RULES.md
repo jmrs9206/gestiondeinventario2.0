@@ -1,6 +1,6 @@
 # MASTER_RULES.md
 
-    > Proyecto: VDEnergy Inventory Management System  
+    > Proyecto: StockFlow Inventory Management System  
     > Modo: Caveman Mode  
     > Fecha base: 2026-05-22
 
@@ -77,7 +77,7 @@ La IA debe operar en modo Caveman:
 - Docker Compose.
 - GitHub Actions.
 - HTTPS en producción.
-- Dominio objetivo: `https://inventario.vdenergy.es`.
+- Dominio objetivo: `https://inventario.tuempresa.com`.
 
 ## Roles
 
@@ -139,7 +139,7 @@ Cada material debe tener:
 Formato URL:
 
 ```text
-https://inventario.vdenergy.es/i/{publicCode}
+https://inventario.tuempresa.com/i/{publicCode}
 ```
 
 Prohibido usar:

@@ -1,0 +1,88 @@
+package com.stockflow.inventory.materials.dto;
+
+import com.stockflow.inventory.common.entity.MaterialStatus;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+public class MaterialRequest {
+
+    @NotBlank(message = "Material type is mandatory")
+    @Size(max = 80, message = "Material type cannot exceed 80 characters")
+    private String materialType;
+
+    @Size(max = 120, message = "Brand cannot exceed 120 characters")
+    private String brand;
+
+    @Size(max = 120, message = "Model cannot exceed 120 characters")
+    private String model;
+
+    @Size(max = 160, message = "Serial number cannot exceed 160 characters")
+    private String serialNumber;
+
+    @NotBlank(message = "Office public ID is mandatory")
+    @Size(max = 64, message = "Office public ID cannot exceed 64 characters")
+    private String officePublicId;
+
+    @NotNull(message = "Status is mandatory")
+    private MaterialStatus status;
+
+    private String comment;
+
+    // Getters and Setters
+    public String getMaterialType() {
+        return materialType;
+    }
+
+    public void setMaterialType(String materialType) {
+        this.materialType = materialType;
+    }
+
+    public String getBrand() {
+        return brand;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public String getSerialNumber() {
+        return serialNumber;
+    }
+
+    public void setSerialNumber(String serialNumber) {
+        this.serialNumber = serialNumber;
+    }
+
+    public String getOfficePublicId() {
+        return officePublicId;
+    }
+
+    public void setOfficePublicId(String officePublicId) {
+        this.officePublicId = officePublicId;
+    }
+
+    public MaterialStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(MaterialStatus status) {
+        this.status = status;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+}

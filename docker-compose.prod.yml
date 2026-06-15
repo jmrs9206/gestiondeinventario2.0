@@ -3,7 +3,7 @@ version: '3.8'
 services:
   mysql_db:
     image: mysql:8.4
-    container_name: vd_mysql_db_prod
+    container_name: stockflow_mysql_db_prod
     restart: always
     environment:
       MYSQL_DATABASE: ${DB_NAME}
@@ -29,13 +29,13 @@ services:
         max-size: "10m"
         max-file: "3"
     networks:
-      - vd_net_prod
+      - stockflow_net_prod
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: vd_backend_prod
+    container_name: stockflow_backend_prod
     restart: always
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql_db:3306/${DB_NAME}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
@@ -61,13 +61,13 @@ services:
         max-size: "10m"
         max-file: "3"
     networks:
-      - vd_net_prod
+      - stockflow_net_prod
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: vd_frontend_prod
+    container_name: stockflow_frontend_prod
     restart: always
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
@@ -82,11 +82,11 @@ services:
         max-size: "10m"
         max-file: "3"
     networks:
-      - vd_net_prod
+      - stockflow_net_prod
 
   nginx:
     image: nginx:1.25-alpine
-    container_name: vd_nginx_prod
+    container_name: stockflow_nginx_prod
     restart: always
     ports:
       - "80:80"
@@ -94,6 +94,7 @@ services:
     volumes:
       - ./docs/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./docs/nginx/certs:/etc/nginx/certs:ro
+      - ./docs/nginx/certbot-webroot:/var/www/certbot:ro
     depends_on:
       - backend
       - frontend
@@ -108,12 +109,28 @@ services:
         max-size: "10m"
         max-file: "3"
     networks:
-      - vd_net_prod
+      - stockflow_net_prod
+
+  certbot:
+    image: certbot/certbot:v2.10.0
+    container_name: stockflow_certbot_prod
+    restart: always
+    volumes:
+      - ./docs/nginx/certs:/etc/letsencrypt
+      - ./docs/nginx/certbot-webroot:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - stockflow_net_prod
 
 volumes:
   mysql-prod-data:
-    name: vd_mysql_prod_data
+    name: stockflow_mysql_prod_data
 
 networks:
-  vd_net_prod:
-    name: vd_network_prod
+  stockflow_net_prod:
+    name: stockflow_network_prod

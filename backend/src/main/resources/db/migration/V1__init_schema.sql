@@ -1,5 +1,5 @@
 -- V1__init_schema.sql
--- VDEnergy Inventory Management System Database Schema Initialization
+-- StockFlow Inventory Management System Database Schema Initialization
 
 -- 1. Users Table
 CREATE TABLE users (

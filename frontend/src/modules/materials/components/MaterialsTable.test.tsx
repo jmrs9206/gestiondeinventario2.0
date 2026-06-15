@@ -10,6 +10,9 @@ vi.mock('../services/material.service', () => ({
   createMaterial: vi.fn(),
   updateMaterial: vi.fn(),
   decommissionMaterial: vi.fn(),
+  reactivateMaterial: vi.fn(),
+  importMaterials: vi.fn(),
+  exportMaterials: vi.fn(),
 }));
 
 vi.mock('../services/office.service', () => ({
@@ -18,7 +21,7 @@ vi.mock('../services/office.service', () => ({
 
 vi.mock('@/modules/auth/hooks/useAuth', () => ({
   useAuth: () => ({
-    user: { publicId: '1', email: 'admin@vdenergy.es', role: 'ADMIN' },
+    user: { publicId: '1', email: 'admin@tuempresa.com', role: 'ADMIN' },
   }),
 }));
 

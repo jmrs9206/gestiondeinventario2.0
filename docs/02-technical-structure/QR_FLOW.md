@@ -1,6 +1,6 @@
 # QR_FLOW.md
 
-    > Proyecto: VDEnergy Inventory Management System  
+    > Proyecto: StockFlow Inventory Management System  
     > Modo: Caveman Mode  
     > Fecha base: 2026-05-22
 
@@ -20,7 +20,7 @@ Definir flujo oficial QR.
 ## URL
 
 ```text
-https://inventario.vdenergy.es/i/{publicCode}
+https://inventario.tuempresa.com/i/{publicCode}
 ```
 
 ## public_code

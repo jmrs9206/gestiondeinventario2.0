@@ -54,7 +54,7 @@ jobs:
         run: npm run build
 
   docker-build:
-    name: Docker Build Check
+    name: Docker Build Check & Security Scan
     runs-on: ubuntu-latest
     needs: [backend-ci, frontend-ci]
     steps:
@@ -69,11 +69,37 @@ jobs:
         with:
           context: ./backend
           file: ./backend/Dockerfile
-          push: false
+          load: true
+          tags: stockflow-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scanner on Backend Image
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: 'stockflow-backend:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
 
       - name: Build Frontend Docker Image
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
-          push: false
+          load: true
+          tags: stockflow-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scanner on Frontend Image
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: 'stockflow-frontend:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'

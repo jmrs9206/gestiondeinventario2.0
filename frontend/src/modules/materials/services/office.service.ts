@@ -13,8 +13,8 @@ export interface OfficeRequest {
   name: string;
 }
 
-export async function fetchOffices(page: number = 0, size: number = 20): Promise<PaginatedResponse<OfficeResponse>> {
-  return apiFetch<PaginatedResponse<OfficeResponse>>(`/api/v1/offices?page=${page}&size=${size}`);
+export async function fetchOffices(page: number = 0, size: number = 20, includeInactive: boolean = false): Promise<PaginatedResponse<OfficeResponse>> {
+  return apiFetch<PaginatedResponse<OfficeResponse>>(`/api/v1/offices?page=${page}&size=${size}&includeInactive=${includeInactive}`);
 }
 
 export async function fetchOffice(publicId: string): Promise<OfficeResponse> {
@@ -38,5 +38,11 @@ export async function updateOffice(publicId: string, data: OfficeRequest): Promi
 export async function deleteOffice(publicId: string): Promise<OfficeResponse> {
   return apiFetch<OfficeResponse>(`/api/v1/offices/${publicId}`, {
     method: 'DELETE',
+  });
+}
+
+export async function reactivateOffice(publicId: string): Promise<OfficeResponse> {
+  return apiFetch<OfficeResponse>(`/api/v1/offices/${publicId}/reactivate`, {
+    method: 'POST',
   });
 }

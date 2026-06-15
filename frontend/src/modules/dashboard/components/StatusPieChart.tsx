@@ -32,15 +32,15 @@ export default function StatusPieChart({ statusCounts }: StatusPieChartProps) {
 
   if (data.length === 0) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-2xl bg-slate-900 border border-slate-800 p-6">
-        <p className="text-slate-400 text-sm">No hay datos de estados para mostrar</p>
+      <div className="flex h-64 items-center justify-center rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-6 shadow-sm">
+        <p className="text-slate-500 dark:text-zinc-400 text-sm">No hay datos de estados para mostrar</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-xl flex flex-col h-full">
-      <h4 className="text-lg font-semibold text-white mb-4">Distribución por Estado</h4>
+    <div className="rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-6 shadow-sm flex flex-col h-full">
+      <h4 className="text-lg font-semibold text-slate-900 dark:text-zinc-50 mb-4">Distribución por Estado</h4>
       <div className="flex-1 min-h-[260px] relative">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -59,19 +59,19 @@ export default function StatusPieChart({ statusCounts }: StatusPieChartProps) {
             </Pie>
             <Tooltip
               contentStyle={{
-                backgroundColor: '#0F172A',
-                border: '1px solid #1E293B',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #E2E8F0',
                 borderRadius: '8px',
-                color: '#F8FAFC',
+                color: '#0F172A',
               }}
-              itemStyle={{ color: '#F8FAFC' }}
+              itemStyle={{ color: '#0F172A' }}
             />
             <Legend
               verticalAlign="bottom"
               height={36}
               iconType="circle"
               iconSize={8}
-              formatter={(value) => <span className="text-slate-300 text-xs font-medium">{value}</span>}
+              formatter={(value) => <span className="text-slate-600 dark:text-zinc-300 text-xs font-semibold">{value}</span>}
             />
           </PieChart>
         </ResponsiveContainer>

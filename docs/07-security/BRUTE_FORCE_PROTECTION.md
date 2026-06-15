@@ -20,7 +20,7 @@ http {
 
     server {
         listen 443 ssl;
-        server_name inventario.vdenergy.es;
+        server_name inventario.tuempresa.com;
 
         # Protección específica del endpoint de Login
         location /api/v1/auth/login {
@@ -65,10 +65,10 @@ Implementamos el control de bloqueo mediante eventos nativos de seguridad de Spr
 ### Servicio de Bloqueo de Usuarios (`UserLockoutService.java`)
 
 ```java
-package com.vdenergy.inventory.auth.service;
+package com.stockflow.inventory.auth.service;
 
-import com.vdenergy.inventory.users.model.User;
-import com.vdenergy.inventory.users.repository.UserRepository;
+import com.stockflow.inventory.users.model.User;
+import com.stockflow.inventory.users.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -124,9 +124,9 @@ public class UserLockoutService {
 ### Listeners de Eventos de Autenticación (`AuthenticationListeners.java`)
 
 ```java
-package com.vdenergy.inventory.auth.listener;
+package com.stockflow.inventory.auth.listener;
 
-import com.vdenergy.inventory.auth.service.UserLockoutService;
+import com.stockflow.inventory.auth.service.UserLockoutService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.event.AuthenticationFailureBadCredentialsEvent;
@@ -158,10 +158,10 @@ public class AuthenticationListeners {
 Durante la carga del usuario en Spring Security, validamos si la cuenta está bloqueada y arrojamos la excepción correspondiente:
 
 ```java
-package com.vdenergy.inventory.auth.service;
+package com.stockflow.inventory.auth.service;
 
-import com.vdenergy.inventory.users.model.User;
-import com.vdenergy.inventory.users.repository.UserRepository;
+import com.stockflow.inventory.users.model.User;
+import com.stockflow.inventory.users.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.userdetails.UserDetails;

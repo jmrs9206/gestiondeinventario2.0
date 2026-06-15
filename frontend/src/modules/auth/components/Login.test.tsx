@@ -77,7 +77,7 @@ describe('LoginPage Component Tests', () => {
     vi.mocked(useAuth).mockImplementation(() => authState);
     mockLogin.mockImplementationOnce(async () => {
       authState.isAuthenticated = true;
-      authState.user = { role: 'ADMIN', email: 'admin@vdenergy.es', name: 'Admin' } as any;
+      authState.user = { role: 'ADMIN', email: 'admin@tuempresa.com', name: 'Admin' } as any;
       return Promise.resolve();
     });
 
@@ -87,12 +87,12 @@ describe('LoginPage Component Tests', () => {
     const passwordInput = screen.getByLabelText(/contraseña/i);
     const submitBtn = screen.getByRole('button', { name: /acceder al panel/i });
 
-    fireEvent.change(emailInput, { target: { value: 'admin@vdenergy.es' } });
+    fireEvent.change(emailInput, { target: { value: 'admin@tuempresa.com' } });
     fireEvent.change(passwordInput, { target: { value: 'securepassword123' } });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith('admin@vdenergy.es', 'securepassword123');
+      expect(mockLogin).toHaveBeenCalledWith('admin@tuempresa.com', 'securepassword123');
     });
 
     rerender(<LoginPage />);
@@ -119,7 +119,7 @@ describe('LoginPage Component Tests', () => {
     const passwordInput = screen.getByLabelText(/contraseña/i);
     const submitBtn = screen.getByRole('button', { name: /acceder al panel/i });
 
-    fireEvent.change(emailInput, { target: { value: 'tecnico@vdenergy.es' } });
+    fireEvent.change(emailInput, { target: { value: 'tecnico@tuempresa.com' } });
     fireEvent.change(passwordInput, { target: { value: 'wrongpassword' } });
     fireEvent.click(submitBtn);
 

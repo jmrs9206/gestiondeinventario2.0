@@ -1,6 +1,6 @@
-# VDEnergy Inventory Management System
+# Inventory Management System
 
-Sistema profesional e integral para la gestión y trazabilidad de inventario (periféricos, dispositivos de red y mobiliario) de VDEnergy.
+Sistema profesional e integral para la gestión y trazabilidad de inventario (periféricos, dispositivos de red y mobiliario) de StockFlow.
 
 ---
 
@@ -100,7 +100,7 @@ Levanta la infraestructura endurecida con aislamiento de puertos de base de dato
    ```bash
    docker compose -f docker-compose.prod.yml up --build -d
    ```
-   *El sistema estará disponible de forma segura a través de HTTPS en https://localhost o el dominio asignado (e.g. https://inventario.vdenergy.es).*
+   *El sistema estará disponible de forma segura a través de HTTPS en https://localhost o el dominio asignado (e.g. https://inventario.tuempresa.com).*
 
 ---
 

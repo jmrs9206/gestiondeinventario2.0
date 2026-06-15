@@ -1,29 +1,35 @@
 # BACKUP_RESTORE.md
 
-    > Proyecto: VDEnergy Inventory Management System  
+    > Proyecto: StockFlow Inventory Management System  
     > Modo: Caveman Mode  
     > Fecha base: 2026-05-22
 
-    ## Backup
+    ## Backup Automatizado
 
-Comando recomendado:
+Para realizar copias de seguridad de la base de datos de manera automática en local, desarrollo o producción, utiliza el script [backup.sh](file:///home/jmrs/gestionDeInventario2.0/docs/backup.sh) localizado en la carpeta `docs/`.
 
+Este script carga los secretos directamente del archivo `.env`, detecta el contenedor de base de datos MySQL activo y genera una copia de seguridad comprimida en la carpeta `/backups` con retención de 7 días.
+
+Ejecución en el host:
 ```bash
-mysqldump -h $DB_HOST -u $DB_USER -p$DB_PASSWORD $DB_NAME > backup.sql
+bash docs/backup.sh
 ```
 
-## Restore
+## Restauración Automatizada
 
+Para restaurar una copia de seguridad comprimida, ejecuta el script [restore.sh](file:///home/jmrs/gestionDeInventario2.0/docs/restore.sh) pasando la ruta al archivo `.gz`:
+
+Ejecución en el host:
 ```bash
-mysql -h $DB_HOST -u $DB_USER -p$DB_PASSWORD $DB_NAME < backup.sql
+bash docs/restore.sh backups/backup-YYYY-MM-DD-HHMMSS.sql.gz
 ```
 
-## Reglas
+## Reglas de Producción
 
-- Backups diarios recomendados.
-- Retención 7-30 días.
-- Probar restore periódicamente.
-- Guardar backups fuera del contenedor.
+- **Backups Diarios:** Configurar un `cron job` en el host para ejecutar `backup.sh` a diario.
+- **Retención:** Retener al menos 30 días de backups en un entorno remoto (fuera del servidor).
+- **Cifrado & Offsite:** Automatizar el copiado de los archivos `.sql.gz` resultantes a un almacenamiento en la nube externo (AWS S3, GCP Cloud Storage) de forma cifrada.
+- **Monitoreo:** El script devuelve código de salida `1` en caso de error, lo cual permite integrarlo con herramientas de monitoreo (como cron alert) para alertar fallos de backup.
 
     ---
 

@@ -18,25 +18,25 @@ export default function OfficeBarChart({ officeCounts }: OfficeBarChartProps) {
 
   if (officeCounts.length === 0 || !hasData) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-2xl bg-slate-900 border border-slate-800 p-6">
-        <p className="text-slate-400 text-sm">No hay datos de oficinas para mostrar</p>
+      <div className="flex h-64 items-center justify-center rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-6 shadow-sm">
+        <p className="text-slate-500 dark:text-zinc-400 text-sm">No hay datos de oficinas para mostrar</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-xl flex flex-col h-full">
-      <h4 className="text-lg font-semibold text-white mb-4">Materiales por Oficina</h4>
+    <div className="rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-6 shadow-sm flex flex-col h-full">
+      <h4 className="text-lg font-semibold text-slate-900 dark:text-zinc-50 mb-4">Materiales por Oficina</h4>
       <div className="flex-1 min-h-[260px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.8} />
-                <stop offset="100%" stopColor="#1D4ED8" stopOpacity={0.2} />
+                <stop offset="100%" stopColor="#1D4ED8" stopOpacity={0.1} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
             <XAxis
               dataKey="name"
               stroke="#64748B"
@@ -52,14 +52,14 @@ export default function OfficeBarChart({ officeCounts }: OfficeBarChartProps) {
               allowDecimals={false}
             />
             <Tooltip
-              cursor={{ fill: '#1E293B', opacity: 0.2 }}
+              cursor={{ fill: '#F1F5F9', opacity: 0.5 }}
               contentStyle={{
-                backgroundColor: '#0F172A',
-                border: '1px solid #1E293B',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #E2E8F0',
                 borderRadius: '8px',
-                color: '#F8FAFC',
+                color: '#0F172A',
               }}
-              itemStyle={{ color: '#F8FAFC' }}
+              itemStyle={{ color: '#0F172A' }}
             />
             <Bar
               dataKey="Materiales"

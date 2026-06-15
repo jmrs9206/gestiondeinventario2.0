@@ -1,6 +1,6 @@
 # SECURITY_FLOW.md
 
-    > Proyecto: VDEnergy Inventory Management System  
+    > Proyecto: StockFlow Inventory Management System  
     > Modo: Caveman Mode  
     > Fecha base: 2026-05-22
 
@@ -18,7 +18,7 @@ Request:
 
 ```json
 {
-  "email": "admin@vdenergy.es",
+  "email": "admin@tuempresa.com",
   "password": "********"
 }
 ```
@@ -53,7 +53,7 @@ Payload:
 ```json
 {
   "sub": "public_id",
-  "email": "admin@vdenergy.es",
+  "email": "admin@tuempresa.com",
   "role": "ADMIN",
   "iat": 0,
   "exp": 0

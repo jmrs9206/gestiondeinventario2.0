@@ -1,13 +1,13 @@
 openapi: 3.0.3
 info:
-  title: VDEnergy Inventory API
+  title: Inventory API
   version: 1.0.0
-  description: API interna y pública para gestión de inventario VDEnergy.
+  description: API interna y pública para gestión de inventario StockFlow.
   contact:
-    name: VDEnergy Support
-    email: soporte@vdenergy.es
+    name: StockFlow Support
+    email: soporte@tuempresa.com
 servers:
-  - url: https://inventario.vdenergy.es
+  - url: https://inventario.tuempresa.com
     description: Production
   - url: http://localhost:8080
     description: Local backend
@@ -733,7 +733,7 @@ components:
           type: string
           format: email
           description: Dirección de correo institucional del usuario.
-          example: admin@vdenergy.es
+          example: admin@tuempresa.com
         password:
           type: string
           format: password
@@ -768,7 +768,7 @@ components:
         email:
           type: string
           format: email
-          example: tecnico@vdenergy.es
+          example: tecnico@tuempresa.com
         role:
           type: string
           enum: [ADMIN, TECNICO]
@@ -791,7 +791,7 @@ components:
         email:
           type: string
           format: email
-          example: nuevo.tecnico@vdenergy.es
+          example: nuevo.tecnico@tuempresa.com
         password:
           type: string
           minLength: 8
@@ -807,7 +807,7 @@ components:
         email:
           type: string
           format: email
-          example: modificado@vdenergy.es
+          example: modificado@tuempresa.com
         role:
           type: string
           enum: [ADMIN, TECNICO]

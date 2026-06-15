@@ -3,7 +3,7 @@ version: '3.8'
 services:
   mysql_db:
     image: mysql:8.4
-    container_name: vd_mysql_db
+    container_name: stockflow_mysql_db
     restart: always
     environment:
       MYSQL_DATABASE: ${DB_NAME}
@@ -21,13 +21,13 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - vd_network
+      - stockflow_network
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: vd_backend
+    container_name: stockflow_backend
     restart: always
     ports:
       - "8080:8080"
@@ -42,25 +42,25 @@ services:
       mysql_db:
         condition: service_healthy
     networks:
-      - vd_network
+      - stockflow_network
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: vd_frontend
+    container_name: stockflow_frontend
     restart: always
     ports:
       - "3000:3000"
     env_file:
       - .env
     networks:
-      - vd_network
+      - stockflow_network
 
 volumes:
   mysql-data:
-    name: vd_mysql_data
+    name: stockflow_mysql_data
 
 networks:
-  vd_network:
-    name: vd_network
+  stockflow_network:
+    name: stockflow_network

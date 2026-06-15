@@ -6,13 +6,14 @@ export interface UserSession {
   publicId: string;
   email: string;
   role: string;
+  mustChangePassword?: boolean;
 }
 
 export interface AuthContextType {
   user: UserSession | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<string | null>;
 }
@@ -32,9 +33,10 @@ function parseJwt(token: string) {
     );
     const decoded = JSON.parse(jsonPayload);
     return {
-      publicId: decoded.sub,
-      email: decoded.email,
+      publicId: decoded.public_id,
+      email: decoded.sub,
       role: decoded.role,
+      mustChangePassword: !!decoded.must_change_password,
       exp: decoded.exp,
     };
   } catch {
@@ -47,26 +49,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const BASE_URL = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080');
 
   const logout = useCallback(async () => {
     const refreshToken = localStorage.getItem('refreshToken');
-    if (refreshToken) {
-      try {
-        await fetch(`${BASE_URL}/api/v1/auth/logout`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
-        });
-      } catch {
-        // Ignore network errors during logout
-      }
-    }
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     setUser(null);
     setIsAuthenticated(false);
     setLoading(false);
+
+    if (refreshToken) {
+      try {
+        fetch(`${BASE_URL}/api/v1/auth/logout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        }).catch(() => {
+          // Ignore background network errors
+        });
+      } catch {
+        // Ignore
+      }
+    }
   }, [BASE_URL]);
 
   const refreshSession = useCallback(async (): Promise<string | null> => {
@@ -106,8 +111,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           publicId: decoded.publicId,
           email: decoded.email,
           role: decoded.role,
+          mustChangePassword: decoded.mustChangePassword,
         });
         setIsAuthenticated(true);
+        setLoading(false);
         return newAccess;
       }
     } catch {
@@ -116,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, [BASE_URL, logout]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     const res = await fetch(`${BASE_URL}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -140,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const access = data.accessToken;
     const refresh = data.refreshToken;
+    const mustChange = !!data.mustChangePassword;
 
     localStorage.setItem('accessToken', access);
     localStorage.setItem('refreshToken', refresh);
@@ -150,8 +158,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         publicId: decoded.publicId,
         email: decoded.email,
         role: decoded.role,
+        mustChangePassword: decoded.mustChangePassword,
       });
       setIsAuthenticated(true);
+      return mustChange;
     } else {
       throw new Error('Token payload parsing error');
     }
@@ -184,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           publicId: decoded.publicId,
           email: decoded.email,
           role: decoded.role,
+          mustChangePassword: decoded.mustChangePassword,
         });
         setIsAuthenticated(true);
         setLoading(false);

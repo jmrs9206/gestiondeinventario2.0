@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: boilerplate_db
+    restart: always
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password_sec_99
+      POSTGRES_DB: boilerplate_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - boilerplate_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev_user -d boilerplate_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: boilerplate_backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://dev_user:dev_password_sec_99@db:5432/boilerplate_db
+      FRONTEND_URL: http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - boilerplate_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: boilerplate_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8080
+    networks:
+      - boilerplate_net
+    depends_on:
+      - backend
+
+volumes:
+  pg-data:
+    name: boilerplate_pg_data
+
+networks:
+  boilerplate_net:
+    name: boilerplate_net

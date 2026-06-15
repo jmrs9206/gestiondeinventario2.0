@@ -73,7 +73,7 @@ export default function AuditLogsTable() {
       return 'text-amber-400 bg-amber-500/5 border-amber-500/20';
     if (action.includes('DELETED') || action.includes('DISABLED') || action.includes('DECOMMISSIONED') || action.includes('FAILED') || action.includes('DENIED'))
       return 'text-rose-400 bg-rose-500/5 border-rose-500/20';
-    return 'text-slate-400 bg-slate-900 border-slate-800';
+    return 'text-slate-600 dark:text-zinc-300 bg-slate-100 border border-slate-200 dark:border-zinc-700';
   };
 
   const formatJson = (val: string | null) => {
@@ -87,21 +87,21 @@ export default function AuditLogsTable() {
   };
 
   return (
-    <div className="flex-1 bg-slate-950 p-6 md:p-8 space-y-6">
+    <div className="flex-1 bg-background p-6 md:p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-900 pb-6">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-700 pb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-            <History className="h-7 w-7 text-blue-500" />
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-zinc-50 flex items-center gap-2">
+            <History className="h-7 w-7 text-blue-600" />
             Bitácora de Auditoría Global
           </h1>
-          <p className="text-xs text-slate-400 mt-1">Registro inmutable de acciones técnicas, inicios de sesión y operaciones críticas.</p>
+          <p className="text-xs text-slate-600 dark:text-zinc-300 mt-1">Registro inmutable de acciones técnicas, inicios de sesión y operaciones críticas.</p>
         </div>
       </div>
 
       {/* Error alert */}
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-rose-900/50 bg-rose-500/5 p-4 text-xs text-rose-400">
+        <div className="flex items-center gap-3 rounded-xl border border-rose-200 dark:border-rose-950/50 bg-rose-50 dark:bg-rose-950/20 p-4 text-xs text-rose-700 dark:text-rose-400">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -109,22 +109,22 @@ export default function AuditLogsTable() {
 
       {/* Timeline audit log list */}
       {loading ? (
-        <div className="border border-slate-850 bg-slate-900/20 rounded-2xl overflow-hidden p-6 space-y-4">
+        <div className="border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-2xl overflow-hidden p-6 space-y-4 shadow-sm">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-12 bg-slate-900/50 rounded-lg animate-pulse" />
+            <div key={i} className="h-12 bg-slate-100 rounded-lg animate-pulse" />
           ))}
         </div>
       ) : logs.length === 0 ? (
-        <div className="border border-dashed border-slate-800 rounded-2xl p-12 text-center">
-          <History className="mx-auto h-8 w-8 text-slate-650" />
-          <h3 className="mt-3 text-sm font-semibold text-white">Bitácora Vacía</h3>
-          <p className="mt-1 text-xs text-slate-400">No se registran eventos de auditoría en la base de datos.</p>
+        <div className="border border-dashed border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-2xl p-12 text-center shadow-sm">
+          <History className="mx-auto h-8 w-8 text-slate-700 dark:text-zinc-300" />
+          <h3 className="mt-3 text-sm font-semibold text-slate-900 dark:text-zinc-50">Bitácora Vacía</h3>
+          <p className="mt-1 text-xs text-slate-700 dark:text-zinc-300">No se registran eventos de auditoría en la base de datos.</p>
         </div>
       ) : (
-        <div className="border border-slate-850 bg-slate-900/20 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-xs text-slate-350">
-              <thead className="border-b border-slate-850 bg-slate-900/40 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <table className="w-full border-collapse text-left text-xs text-slate-700 dark:text-zinc-200">
+              <thead className="border-b border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-300">
                 <tr>
                   <th className="px-6 py-4">Fecha / Hora</th>
                   <th className="px-6 py-4">Acción</th>
@@ -134,13 +134,13 @@ export default function AuditLogsTable() {
                   <th className="px-6 py-4 text-right">Detalles</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-850">
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-700">
                 {logs.map((log, idx) => {
                   const isExpanded = expandedLogIdx === idx;
                   return (
                     <React.Fragment key={idx}>
-                      <tr className="hover:bg-slate-900/10 transition-colors">
-                        <td className="px-6 py-4 font-semibold text-slate-400">
+                      <tr className="hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 transition-colors">
+                        <td className="px-6 py-4 font-semibold text-slate-600 dark:text-zinc-300">
                           {new Date(log.createdAt).toLocaleString('es-ES')}
                         </td>
                         <td className="px-6 py-4">
@@ -148,21 +148,21 @@ export default function AuditLogsTable() {
                             {log.action}
                           </span>
                         </td>
-                        <td className="px-6 py-4 font-mono font-medium text-slate-400">
+                        <td className="px-6 py-4 font-mono font-medium text-slate-600 dark:text-zinc-300">
                           {log.entityType}{' '}
                           {log.entityId && (
-                            <span className="text-[10px] text-blue-500 font-bold">[{log.entityId}]</span>
+                            <span className="text-[10px] text-blue-600 font-bold">[{log.entityId}]</span>
                           )}
                         </td>
                         <td className="px-6 py-4 font-semibold">
-                          <span className="text-[10px] text-slate-500 uppercase mr-1">{log.performedByType}:</span>
-                          <span className="font-mono text-slate-300">{log.performedById}</span>
+                          <span className="text-[10px] text-slate-600 dark:text-zinc-300 uppercase mr-1">{log.performedByType}:</span>
+                          <span className="font-mono text-slate-700 dark:text-zinc-200">{log.performedById}</span>
                         </td>
-                        <td className="px-6 py-4 font-mono text-slate-500">{log.ipAddress || 'Interno'}</td>
+                        <td className="px-6 py-4 font-mono text-slate-600 dark:text-zinc-300">{log.ipAddress || 'Interno'}</td>
                         <td className="px-6 py-4 text-right">
                           <button
                             onClick={() => toggleExpand(idx)}
-                            className="text-blue-400 hover:text-blue-300 font-bold hover:underline transition"
+                            className="text-blue-600 hover:text-blue-300 font-bold hover:underline transition"
                           >
                             {isExpanded ? 'Ocultar' : 'Ver más'}
                           </button>
@@ -172,26 +172,26 @@ export default function AuditLogsTable() {
                       {/* Collapsible details panel */}
                       {isExpanded && (
                         <tr>
-                          <td colSpan={6} className="bg-slate-900/35 border-t border-b border-slate-850/80 px-8 py-6">
+                          <td colSpan={6} className="bg-slate-50 dark:bg-zinc-900 border-t border-b border-slate-200 dark:border-zinc-700/80 px-8 py-6">
                             <div className="grid gap-6 md:grid-cols-2">
                               {/* Metadata */}
                               <div className="space-y-4">
-                                <h4 className="text-xs font-bold text-white flex items-center gap-1.5 uppercase tracking-wide">
-                                  <Terminal className="h-4 w-4 text-slate-400" />
+                                <h4 className="text-xs font-bold text-slate-900 dark:text-zinc-50 flex items-center gap-1.5 uppercase tracking-wide">
+                                  <Terminal className="h-4 w-4 text-slate-600 dark:text-zinc-300" />
                                   Información Técnica del Evento
                                 </h4>
 
                                 <div className="space-y-2 text-xs">
                                   <div className="flex items-center gap-2">
-                                    <Globe className="h-4 w-4 text-slate-600 shrink-0" />
-                                    <span className="text-slate-500">Dirección IP:</span>
-                                    <span className="font-mono text-white">{log.ipAddress || 'SISTEMA/MOCK'}</span>
+                                    <Globe className="h-4 w-4 text-slate-600 dark:text-zinc-300 shrink-0" />
+                                    <span className="text-slate-600 dark:text-zinc-300">Dirección IP:</span>
+                                    <span className="font-mono text-slate-900 dark:text-zinc-50">{log.ipAddress || 'SISTEMA/MOCK'}</span>
                                   </div>
                                   <div className="flex items-start gap-2">
-                                    <Monitor className="h-4 w-4 text-slate-600 shrink-0 mt-0.5" />
+                                    <Monitor className="h-4 w-4 text-slate-600 dark:text-zinc-300 shrink-0 mt-0.5" />
                                     <div className="overflow-hidden">
-                                      <span className="text-slate-500">User Agent:</span>
-                                      <p className="font-mono text-slate-400 text-[10px] break-all leading-relaxed mt-0.5 bg-slate-950 border border-slate-850 p-2 rounded-lg">
+                                      <span className="text-slate-600 dark:text-zinc-300">User Agent:</span>
+                                      <p className="font-mono text-slate-600 dark:text-zinc-300 text-[10px] break-all leading-relaxed mt-0.5 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-2 rounded-lg">
                                         {log.userAgent || 'No provisto'}
                                       </p>
                                     </div>
@@ -201,21 +201,21 @@ export default function AuditLogsTable() {
 
                               {/* Before / After Data JSON comparison */}
                               <div className="space-y-4">
-                                <h4 className="text-xs font-bold text-white flex items-center gap-1.5 uppercase tracking-wide">
-                                  <Info className="h-4 w-4 text-slate-400" />
+                                <h4 className="text-xs font-bold text-slate-900 dark:text-zinc-50 flex items-center gap-1.5 uppercase tracking-wide">
+                                  <Info className="h-4 w-4 text-slate-600 dark:text-zinc-300" />
                                   Cambios Realizados (Valores JSON)
                                 </h4>
 
                                 <div className="grid gap-4 sm:grid-cols-2">
                                   <div className="space-y-1.5">
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Valor Anterior</span>
-                                    <pre className="text-[10px] font-mono text-slate-400 bg-slate-950 border border-slate-850 rounded-lg p-3 overflow-x-auto max-h-40 leading-relaxed">
+                                    <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase tracking-wider">Valor Anterior</span>
+                                    <pre className="text-[10px] font-mono text-slate-600 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-3 overflow-x-auto max-h-40 leading-relaxed">
                                       {formatJson(log.oldValue)}
                                     </pre>
                                   </div>
                                   <div className="space-y-1.5">
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Valor Nuevo</span>
-                                    <pre className="text-[10px] font-mono text-emerald-400/90 bg-slate-950 border border-slate-850 rounded-lg p-3 overflow-x-auto max-h-40 leading-relaxed">
+                                    <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase tracking-wider">Valor Nuevo</span>
+                                    <pre className="text-[10px] font-mono text-emerald-400/90 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-3 overflow-x-auto max-h-40 leading-relaxed">
                                       {formatJson(log.newValue)}
                                     </pre>
                                   </div>
@@ -234,26 +234,26 @@ export default function AuditLogsTable() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="border-t border-slate-850 bg-slate-900/20 px-6 py-4 flex items-center justify-between">
-              <span className="text-xs text-slate-500 font-medium">
-                Mostrando <span className="text-slate-350">{logs.length}</span> de{' '}
-                <span className="text-slate-350">{totalElements}</span> resultados
+            <div className="border-t border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 px-6 py-4 flex items-center justify-between">
+              <span className="text-xs text-slate-600 dark:text-zinc-300 font-medium">
+                Mostrando <span className="text-slate-700 dark:text-zinc-200">{logs.length}</span> de{' '}
+                <span className="text-slate-700 dark:text-zinc-200">{totalElements}</span> resultados
               </span>
               <div className="flex gap-2">
                 <button
                   disabled={page === 0}
                   onClick={() => setPage(page - 1)}
-                  className="p-2 border border-slate-800 bg-slate-950 hover:bg-slate-850 disabled:opacity-40 rounded-lg text-slate-400 hover:text-white transition"
+                  className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 disabled:opacity-40 rounded-lg text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <span className="flex items-center px-3 py-1 border border-slate-800 bg-slate-950 rounded-lg font-bold text-slate-350">
+                <span className="flex items-center px-3 py-1 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-lg font-bold text-slate-700 dark:text-zinc-200">
                   {page + 1} / {totalPages}
                 </span>
                 <button
                   disabled={page >= totalPages - 1}
                   onClick={() => setPage(page + 1)}
-                  className="p-2 border border-slate-800 bg-slate-950 hover:bg-slate-850 disabled:opacity-40 rounded-lg text-slate-400 hover:text-white transition"
+                  className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 disabled:opacity-40 rounded-lg text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>

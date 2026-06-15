@@ -56,6 +56,7 @@ export interface FetchMaterialsParams {
   materialType?: string;
   officePublicId?: string;
   serialNumber?: string;
+  includeInactive?: boolean;
   page?: number;
   size?: number;
 }
@@ -66,6 +67,7 @@ export async function fetchMaterials(params: FetchMaterialsParams = {}): Promise
   if (params.materialType) searchParams.append('materialType', params.materialType);
   if (params.officePublicId) searchParams.append('officePublicId', params.officePublicId);
   if (params.serialNumber) searchParams.append('serialNumber', params.serialNumber);
+  if (params.includeInactive !== undefined) searchParams.append('includeInactive', params.includeInactive.toString());
   if (params.page !== undefined) searchParams.append('page', params.page.toString());
   if (params.size !== undefined) searchParams.append('size', params.size.toString());
 
@@ -98,6 +100,13 @@ export async function decommissionMaterial(publicCode: string, comment?: string)
   });
 }
 
+export async function reactivateMaterial(publicCode: string, comment?: string): Promise<MaterialResponse> {
+  const query = comment ? `?comment=${encodeURIComponent(comment)}` : '';
+  return apiFetch<MaterialResponse>(`/api/v1/materials/${publicCode}/reactivate${query}`, {
+    method: 'POST',
+  });
+}
+
 export async function regenerateQrCode(publicCode: string): Promise<MaterialResponse> {
   return apiFetch<MaterialResponse>(`/api/v1/materials/${publicCode}/qr/regenerate`, {
     method: 'POST',
@@ -106,4 +115,37 @@ export async function regenerateQrCode(publicCode: string): Promise<MaterialResp
 
 export async function fetchMaterialHistory(publicCode: string, page: number = 0, size: number = 20): Promise<PaginatedResponse<MaterialHistoryResponse>> {
   return apiFetch<PaginatedResponse<MaterialHistoryResponse>>(`/api/v1/inventory/materials/${publicCode}/history?page=${page}&size=${size}`);
+}
+
+export async function importMaterials(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiFetch<string>('/api/v1/materials/import', {
+    method: 'POST',
+    body: formData,
+  });
+}
+
+export async function exportMaterials(): Promise<void> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const headers = new Headers();
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  const BASE_URL = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080');
+  const response = await fetch(`${BASE_URL}/api/v1/materials/export`, {
+    headers,
+  });
+  if (!response.ok) {
+    throw new Error('Error al exportar materiales');
+  }
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'inventario_materiales.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
 }

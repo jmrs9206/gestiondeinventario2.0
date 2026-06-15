@@ -22,7 +22,10 @@ import {
   CheckCircle2,
   ChevronLeft,
   Info,
-  Sliders
+  Sliders,
+  Building2,
+  Wrench,
+  ClipboardList
 } from 'lucide-react';
 import { useAuth } from '@/modules/auth/hooks/useAuth';
 
@@ -106,6 +109,10 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
         await decommissionMaterial(publicCode, decommissionComment);
         setSuccess('Equipo dado de baja correctamente.');
       } else {
+        if (!officeId) {
+          setError('Debe seleccionar una oficina válida.');
+          return;
+        }
         const req: MaterialRequest = {
           materialType: material.materialType,
           brand: material.brand,
@@ -113,7 +120,7 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
           serialNumber: material.serialNumber,
           description: material.description,
           status: status,
-          officePublicId: officeId || null
+          officePublicId: officeId
         };
         await updateMaterial(publicCode, req);
         setSuccess('Estado e información actualizados con éxito.');
@@ -130,62 +137,59 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
   const getStatusBg = (s: string) => {
     switch (s) {
       case 'OPERATIVO':
-        return 'bg-emerald-500/10 text-emerald-450 border border-emerald-500/20';
+        return 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-950/50';
       case 'EN_REPARACION':
-        return 'bg-amber-500/10 text-amber-450 border border-amber-500/20';
+        return 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-950/50';
       case 'ROTO':
-        return 'bg-rose-500/10 text-rose-450 border border-rose-500/20';
+        return 'bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-950/50';
       case 'BAJA':
-        return 'bg-slate-800 text-slate-400 border border-slate-700';
+        return 'bg-slate-100 text-slate-600 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700';
       default:
-        return 'bg-slate-900 text-slate-500';
+        return 'bg-slate-100 text-slate-600 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700';
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-slate-300">
-        <Loader2 className="h-10 w-10 text-blue-500 animate-spin mb-3" />
-        <p className="text-sm font-medium text-slate-455 animate-pulse">Obteniendo detalles del código QR...</p>
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
+        <Loader2 className="h-10 w-10 text-blue-600 animate-spin mb-3" />
+        <p className="text-sm font-medium text-slate-600 dark:text-zinc-300 animate-pulse">Obteniendo detalles del código QR...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {/* Mobile Sticky Header */}
-      <header className="flex items-center justify-between px-6 py-4 bg-slate-900/60 backdrop-blur-md border-b border-slate-850/80 sticky top-0 z-30">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <header className="flex items-center justify-between px-6 py-4 bg-background backdrop-blur-md border-b border-slate-200 dark:border-zinc-700/80 sticky top-0 z-30">
         <button
           onClick={() => router.push('/materials')}
-          className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-slate-800 bg-slate-950 text-xs font-semibold text-slate-400 hover:text-white transition"
+          className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
         >
           <ChevronLeft className="h-4 w-4" />
           Volver
         </button>
         <div className="flex items-center gap-1.5">
-          <QrCode className="h-5 w-5 text-blue-500" />
-          <span className="font-mono text-sm font-bold text-white">{publicCode}</span>
+          <QrCode className="h-5 w-5 text-blue-600" />
+          <span className="font-mono text-sm font-bold text-slate-900 dark:text-zinc-50">{publicCode}</span>
         </div>
         <button
           onClick={handleLogout}
-          className="p-2 border border-slate-800 bg-slate-950 text-slate-400 hover:text-white rounded-lg transition"
+          className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 rounded-lg transition"
           title="Cerrar sesión"
         >
           <LogOut className="h-4 w-4" />
         </button>
       </header>
 
-      {/* Main Form container */}
       <main className="flex-1 p-6 max-w-md w-full mx-auto space-y-6">
-        {/* Error / Success Banners */}
         {error && (
-          <div className="flex items-start gap-3 rounded-xl border border-rose-900/50 bg-rose-500/5 p-4 text-xs text-rose-400">
+          <div className="flex items-start gap-3 rounded-xl border border-rose-200 dark:border-rose-950/50 bg-rose-50 dark:bg-rose-950/20 p-4 text-xs text-rose-700 dark:text-rose-400">
             <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
         {success && (
-          <div className="flex items-start gap-3 rounded-xl border border-emerald-900/50 bg-emerald-500/5 p-4 text-xs text-emerald-400">
+          <div className="flex items-start gap-3 rounded-xl border border-emerald-200 dark:border-emerald-950/50 bg-emerald-50 dark:bg-emerald-950/20 p-4 text-xs text-emerald-700 dark:text-emerald-400">
             <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
             <span>{success}</span>
           </div>
@@ -193,61 +197,46 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
 
         {material ? (
           <div className="space-y-6">
-            {/* Material Card */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden space-y-4">
+            <div className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl shadow-sm p-6 shadow-2xl relative overflow-hidden space-y-4">
               <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
-
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase tracking-widest">
                   {material.materialType}
                 </span>
-                <h2 className="text-xl font-black text-white mt-1">
-                  {material.brand} <span className="text-slate-500 font-light">{material.model}</span>
+                <h2 className="text-xl font-black text-slate-900 dark:text-zinc-50 mt-1">
+                  {material.brand} <span className="text-slate-600 dark:text-zinc-300 font-light">{material.model}</span>
                 </h2>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${getStatusBg(material.status)}`}>
-                    {material.status}
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-500">
-                    S/N: {material.serialNumber}
-                  </span>
-                </div>
+                <p className="text-[10px] font-mono text-slate-500 dark:text-zinc-400 mt-0.5">S/N: {material.serialNumber}</p>
               </div>
 
-              <div className="pt-4 border-t border-slate-850/80 grid grid-cols-2 gap-4 text-xs">
-                <div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ubicación Actual</p>
-                  <p className="font-semibold text-slate-300 mt-1">
-                    {material.officeName || <span className="text-slate-600 italic">Sin asignar</span>}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Último cambio</p>
-                  <p className="font-medium text-slate-400 mt-1">
-                    {new Date(material.updatedAt).toLocaleDateString('es-ES')}
-                  </p>
-                </div>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase border ${getStatusBg(material.status)}`}>
+                  {material.status}
+                </span>
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 uppercase tracking-wide">
+                  {material.officeName || 'Sin Oficina'}
+                </span>
               </div>
             </div>
 
-            {/* Quick Actions Form */}
             {material.status !== 'BAJA' ? (
-              <form onSubmit={handleSave} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-wide border-b border-slate-850 pb-3">
-                  <Sliders className="h-4 w-4 text-blue-500" />
+              /* Quick Actions Form */
+              <form onSubmit={handleSave} className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl shadow-sm p-6 shadow-2xl space-y-5">
+                <h3 className="text-sm font-black text-slate-900 dark:text-zinc-50 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 dark:border-zinc-700 pb-3">
+                  <Activity className="h-4.5 w-4.5 text-blue-600" />
                   Acciones Rápidas
                 </h3>
 
                 {/* Status selector */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
-                    <Activity className="h-4 w-4 text-slate-500" />
+                  <label className="text-xs font-semibold text-slate-600 dark:text-zinc-300 flex items-center gap-1.5">
+                    <Wrench className="h-3.5 w-3.5" />
                     Cambiar Estado
                   </label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 text-white font-medium"
+                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 text-slate-800 dark:text-zinc-100 font-medium"
                   >
                     <option value="OPERATIVO">OPERATIVO</option>
                     <option value="EN_REPARACION">EN REPARACIÓN</option>
@@ -259,16 +248,17 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
                 {/* Office selector */}
                 {status !== 'BAJA' && (
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
-                      <MapPin className="h-4 w-4 text-slate-500" />
+                    <label className="text-xs font-semibold text-slate-600 dark:text-zinc-300 flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5" />
                       Asignar Nueva Oficina
                     </label>
                     <select
                       value={officeId}
                       onChange={(e) => setOfficeId(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 text-white font-medium"
+                      required
+                      className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 text-slate-800 dark:text-zinc-100 font-medium"
                     >
-                      <option value="">Sin Asignar</option>
+                      <option value="" disabled>Seleccione una oficina...</option>
                       {offices.map((off) => (
                         <option key={off.publicId} value={off.publicId}>
                           {off.name}
@@ -280,8 +270,8 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
 
                 {/* Decommission justification comment */}
                 {status === 'BAJA' && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                  <div className="space-y-1.5 animate-fadeIn">
+                    <label className="text-xs font-semibold text-rose-700 dark:text-rose-400">
                       Comentario de Baja *
                     </label>
                     <textarea
@@ -290,7 +280,7 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
                       onChange={(e) => setDecommissionComment(e.target.value)}
                       placeholder="Motivo obligatorio para retirar el equipo..."
                       rows={3}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 text-white resize-none"
+                      className="w-full bg-white dark:bg-zinc-800 border border-rose-200 dark:border-rose-950/50 rounded-xl p-3 text-sm focus:outline-none focus:border-rose-500 text-slate-900 dark:text-zinc-50 resize-none"
                     />
                   </div>
                 )}
@@ -315,20 +305,20 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
                 </button>
               </form>
             ) : (
-              <div className="bg-slate-900/40 border border-slate-850 p-6 rounded-2xl text-center space-y-2">
-                <Info className="mx-auto h-8 w-8 text-slate-600" />
-                <h4 className="text-sm font-bold text-slate-400">Equipo en estado BAJA</h4>
-                <p className="text-xs text-slate-500 max-w-xs mx-auto">
+              <div className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-6 rounded-2xl text-center space-y-2">
+                <Info className="mx-auto h-8 w-8 text-slate-600 dark:text-zinc-300" />
+                <h4 className="text-sm font-bold text-slate-600 dark:text-zinc-300">Equipo en estado BAJA</h4>
+                <p className="text-xs text-slate-600 dark:text-zinc-300 max-w-xs mx-auto">
                   Este equipo ha sido retirado definitivamente y no permite actualizaciones rápidas de inventario.
                 </p>
               </div>
             )}
           </div>
         ) : (
-          <div className="text-center p-8 bg-slate-900 border border-slate-800 rounded-2xl">
+          <div className="text-center p-8 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl shadow-sm">
             <AlertCircle className="mx-auto h-12 w-12 text-rose-500" />
-            <h3 className="text-base font-bold text-white mt-4">Equipo no encontrado</h3>
-            <p className="text-xs text-slate-400 mt-2">
+            <h3 className="text-base font-bold text-slate-900 dark:text-zinc-50 mt-4">Equipo no encontrado</h3>
+            <p className="text-xs text-slate-700 dark:text-zinc-300 mt-2">
               El código de material no corresponde a ningún activo en el sistema.
             </p>
           </div>
