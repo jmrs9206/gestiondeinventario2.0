@@ -8,12 +8,14 @@ import {
   DashboardKpis,
   MaterialHistoryResponse,
 } from '../../modules/dashboard/services/dashboard.service';
+import dynamic from 'next/dynamic';
 import KpiCard from '../../modules/dashboard/components/KpiCard';
-import StatusPieChart from '../../modules/dashboard/components/StatusPieChart';
-import OfficeBarChart from '../../modules/dashboard/components/OfficeBarChart';
+const StatusPieChart = dynamic(() => import('../../modules/dashboard/components/StatusPieChart'), { ssr: false });
+const OfficeBarChart = dynamic(() => import('../../modules/dashboard/components/OfficeBarChart'), { ssr: false });
 import RecentMovementsTable from '../../modules/dashboard/components/RecentMovementsTable';
 import DashboardFilters from '../../modules/dashboard/components/DashboardFilters';
 import ProtectedRoute from '@/modules/auth/components/ProtectedRoute';
+import Navigation from '@/modules/materials/components/Navigation';
 
 function DashboardPageContent() {
   const [kpis, setKpis] = useState<DashboardKpis | null>(null);
@@ -101,31 +103,31 @@ function DashboardPageContent() {
   // 1. Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 p-8">
+      <div className="min-h-screen bg-background text-foreground p-8">
         <div className="mx-auto max-w-7xl space-y-8">
           {/* Header Skeleton */}
-          <div className="flex items-center justify-between border-b border-slate-900 pb-6">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-700 pb-6">
             <div>
-              <div className="h-8 w-64 bg-slate-900 rounded-lg animate-pulse" />
-              <div className="h-4 w-48 bg-slate-900 rounded-md mt-2 animate-pulse" />
+              <div className="h-8 w-64 bg-slate-200 dark:bg-zinc-700/60 rounded-lg animate-pulse" />
+              <div className="h-4 w-48 bg-slate-200 dark:bg-zinc-700/60 rounded-md mt-2 animate-pulse" />
             </div>
-            <div className="h-10 w-24 bg-slate-900 rounded-lg animate-pulse" />
+            <div className="h-10 w-24 bg-slate-200 dark:bg-zinc-700/60 rounded-lg animate-pulse" />
           </div>
 
           {/* KPI Skeletons */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 bg-slate-900 border border-slate-850 rounded-2xl animate-pulse" />
+              <div key={i} className="h-32 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl animate-pulse" />
             ))}
           </div>
 
           {/* Filters Skeleton */}
-          <div className="h-20 bg-slate-900 border border-slate-850 rounded-2xl animate-pulse" />
+          <div className="h-20 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl animate-pulse" />
 
           {/* Charts Skeletons */}
           <div className="grid gap-6 md:grid-cols-2">
-            <div className="h-80 bg-slate-900 border border-slate-850 rounded-2xl animate-pulse" />
-            <div className="h-80 bg-slate-900 border border-slate-850 rounded-2xl animate-pulse" />
+            <div className="h-80 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl animate-pulse" />
+            <div className="h-80 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl animate-pulse" />
           </div>
         </div>
       </div>
@@ -135,14 +137,14 @@ function DashboardPageContent() {
   // 2. Error State
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-8">
-        <div className="rounded-2xl bg-slate-900 border border-slate-800 p-8 text-center max-w-md w-full shadow-2xl relative overflow-hidden">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-8">
+        <div className="rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-8 text-center max-w-md w-full shadow-xl relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-rose-500" />
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-500/10 text-rose-500">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-950/20 text-rose-500">
             <AlertTriangle className="h-7 w-7" />
           </div>
-          <h3 className="mt-4 text-lg font-semibold text-white">Error de Carga</h3>
-          <p className="mt-2 text-sm text-slate-400 leading-relaxed">{error}</p>
+          <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-zinc-50">Error de Carga</h3>
+          <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300 leading-relaxed">{error}</p>
           <div className="mt-6 flex flex-col gap-2">
             <button
               onClick={loadData}
@@ -156,7 +158,7 @@ function DashboardPageContent() {
                 localStorage.setItem('accessToken', 'mock_admin_token'); // Setup token for local developer mode
                 loadData();
               }}
-              className="mt-2 text-xs text-blue-400 hover:text-blue-300 font-medium hover:underline"
+              className="mt-2 text-xs text-blue-600 hover:text-blue-500 font-medium hover:underline"
             >
               Configurar token de prueba
             </button>
@@ -170,23 +172,23 @@ function DashboardPageContent() {
   const isEmpty = !kpis || kpis.totalMaterials === 0;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-8">
+    <div className="min-h-screen bg-background text-foreground p-8">
       <div className="mx-auto max-w-7xl space-y-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-900 pb-6 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 dark:border-zinc-700 pb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              <Shield className="h-8 w-8 text-blue-500" />
-              VDEnergy
-              <span className="text-slate-500 font-light text-2xl">|</span>
-              <span className="font-semibold text-slate-300">Dashboard</span>
+            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
+              <Shield className="h-8 w-8 text-blue-600" />
+              Gestión De Inventario
+              <span className="text-slate-700 dark:text-zinc-200 font-light text-2xl">|</span>
+              <span className="font-semibold text-slate-700 dark:text-zinc-200">Dashboard</span>
             </h1>
-            <p className="text-xs text-slate-400 mt-1">Panel de control de administración y métricas globales de inventario</p>
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">Panel de control de administración y métricas globales de inventario</p>
           </div>
           <div>
             <button
               onClick={loadData}
-              className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-850 hover:text-white transition duration-200"
+              className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 hover:text-slate-900 dark:text-zinc-50 transition duration-200"
             >
               <RotateCw className="h-3.5 w-3.5" />
               Actualizar
@@ -196,12 +198,12 @@ function DashboardPageContent() {
 
         {isEmpty ? (
           /* Empty State Dashboard */
-          <div className="rounded-2xl bg-slate-900 border border-slate-800 p-12 text-center max-w-2xl mx-auto shadow-xl">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/10 text-blue-500">
+          <div className="rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-12 text-center max-w-2xl mx-auto shadow-sm">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950/20 text-blue-600">
               <Package className="h-8 w-8" />
             </div>
-            <h3 className="mt-4 text-xl font-bold text-white">Inventario Vacío</h3>
-            <p className="mt-2 text-sm text-slate-400 leading-relaxed max-w-md mx-auto">
+            <h3 className="mt-4 text-xl font-bold text-slate-900 dark:text-zinc-50">Inventario Vacío</h3>
+            <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed max-w-md mx-auto">
               No hay materiales registrados en el inventario actualmente. Una vez agregados por el equipo técnico, las estadísticas aparecerán aquí de forma automática.
             </p>
           </div>
@@ -271,7 +273,9 @@ function DashboardPageContent() {
 export default function DashboardPage() {
   return (
     <ProtectedRoute allowedRoles={['ADMIN']}>
-      <DashboardPageContent />
+      <Navigation>
+        <DashboardPageContent />
+      </Navigation>
     </ProtectedRoute>
   );
 }

@@ -22,7 +22,8 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  Users
+  Users,
+  Check
 } from 'lucide-react';
 import { useAuth } from '@/modules/auth/hooks/useAuth';
 
@@ -51,6 +52,20 @@ export default function UsersTable() {
   const [formPassword, setFormPassword] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Toast feedback
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+  };
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   const isMountedRef = useRef(true);
 
@@ -111,12 +126,8 @@ export default function UsersTable() {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formFirstName.trim() || !formLastName.trim() || !formEmail.trim() || !formPassword.trim()) {
+    if (!formFirstName.trim() || !formLastName.trim() || !formEmail.trim()) {
       setFormError('Todos los campos son obligatorios.');
-      return;
-    }
-    if (formPassword.length < 8) {
-      setFormError('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
     setSubmitting(true);
@@ -126,14 +137,15 @@ export default function UsersTable() {
         firstName: formFirstName,
         lastName: formLastName,
         email: formEmail,
-        password: formPassword,
         role: formRole
       };
       await createUser(req);
       setShowCreateModal(false);
       loadUsers();
+      showToast('Usuario creado exitosamente. Las credenciales de acceso se enviarán por correo.');
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : 'Error al crear el usuario.');
+      showToast(err instanceof Error ? err.message : 'Error al crear el usuario.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -158,8 +170,10 @@ export default function UsersTable() {
       await updateUser(selectedUser.publicId, req);
       setShowEditModal(false);
       loadUsers();
+      showToast('Usuario actualizado exitosamente.');
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : 'Error al actualizar el usuario.');
+      showToast(err instanceof Error ? err.message : 'Error al actualizar el usuario.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -181,8 +195,10 @@ export default function UsersTable() {
     try {
       await changeUserPassword(selectedUser.publicId, formPassword);
       setShowPasswordModal(false);
+      showToast('Contraseña restablecida exitosamente.');
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : 'Error al reestablecer la contraseña.');
+      showToast(err instanceof Error ? err.message : 'Error al reestablecer la contraseña.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -197,22 +213,35 @@ export default function UsersTable() {
     try {
       await changeUserStatus(user.publicId, !user.active);
       loadUsers();
+      showToast(user.active ? 'Usuario desactivado exitosamente.' : 'Usuario activado exitosamente.');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al cambiar estado del usuario.');
+      showToast(err instanceof Error ? err.message : 'Error al cambiar estado del usuario.', 'error');
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex-1 bg-slate-950 p-6 md:p-8 space-y-6">
+    <div className="flex-1 bg-background p-6 md:p-8 space-y-6 relative">
+      {/* Toast Notification Banner */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border transition-all duration-300 ${
+          toast.type === 'success' 
+            ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-950/50' 
+            : 'bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-950/50'
+        }`}>
+          {toast.type === 'success' ? <Check className="h-4 w-4 text-emerald-600" /> : <AlertCircle className="h-4 w-4 text-rose-600" />}
+          <span className="text-xs font-semibold">{toast.message}</span>
+        </div>
+      )}
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-            <Users className="h-7 w-7 text-blue-500" />
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-zinc-50 flex items-center gap-2">
+            <Users className="h-7 w-7 text-blue-600" />
             Administración de Usuarios
           </h1>
-          <p className="text-xs text-slate-400 mt-1">Control de accesos corporativos y roles administrativos de VDEnergy.</p>
+          <p className="text-xs text-slate-600 dark:text-zinc-300 mt-1">Control de accesos corporativos y roles administrativos de Gestión De Inventario.</p>
         </div>
         <button
           onClick={handleOpenCreate}
@@ -225,7 +254,7 @@ export default function UsersTable() {
 
       {/* Error alert */}
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-rose-900/50 bg-rose-500/5 p-4 text-xs text-rose-400">
+        <div className="flex items-center gap-3 rounded-xl border border-rose-200 dark:border-rose-950/50 bg-rose-50 dark:bg-rose-950/20 p-4 text-xs text-rose-700 dark:text-rose-400">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -233,21 +262,21 @@ export default function UsersTable() {
 
       {/* Users table */}
       {loading ? (
-        <div className="border border-slate-850 bg-slate-900/20 rounded-2xl overflow-hidden p-6 space-y-4">
+        <div className="border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-2xl overflow-hidden p-6 space-y-4 shadow-sm">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-10 bg-slate-900/50 rounded-lg animate-pulse" />
+            <div key={i} className="h-10 bg-slate-100 rounded-lg animate-pulse" />
           ))}
         </div>
       ) : users.length === 0 ? (
-        <div className="border border-dashed border-slate-800 rounded-2xl p-12 text-center">
-          <Users className="mx-auto h-8 w-8 text-slate-650" />
-          <h3 className="mt-3 text-sm font-semibold text-white">No hay usuarios registrados</h3>
+        <div className="border border-dashed border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-2xl p-12 text-center shadow-sm">
+          <Users className="mx-auto h-8 w-8 text-slate-700 dark:text-zinc-300" />
+          <h3 className="mt-3 text-sm font-semibold text-slate-900 dark:text-zinc-50">No hay usuarios registrados</h3>
         </div>
       ) : (
-        <div className="border border-slate-850 bg-slate-900/20 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-xs text-slate-300">
-              <thead className="border-b border-slate-850 bg-slate-900/40 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <table className="w-full border-collapse text-left text-xs text-slate-700 dark:text-zinc-200">
+              <thead className="border-b border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-300">
                 <tr>
                   <th className="px-6 py-4">Nombre Completo</th>
                   <th className="px-6 py-4">Email</th>
@@ -256,17 +285,17 @@ export default function UsersTable() {
                   <th className="px-6 py-4 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-850">
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-700">
                 {users.map((item) => (
-                  <tr key={item.publicId} className="hover:bg-slate-900/20 transition-colors">
-                    <td className="px-6 py-4 font-bold text-white">
+                  <tr key={item.publicId} className="hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 transition-colors">
+                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-zinc-50">
                       {item.firstName} {item.lastName}
                     </td>
-                    <td className="px-6 py-4 font-mono text-slate-450">{item.email}</td>
+                    <td className="px-6 py-4 font-mono text-slate-600 dark:text-zinc-300">{item.email}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase border ${
                         item.role === 'ADMIN'
-                          ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                          ? 'bg-blue-500/10 text-blue-600 border-blue-500/20'
                           : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
                       }`}>
                         {item.role}
@@ -276,42 +305,47 @@ export default function UsersTable() {
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase border ${
                         item.active
                           ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                          : 'bg-rose-500/10 text-rose-450 border-rose-500/20'
+                          : 'bg-rose-500/10 text-rose-600 border-rose-500/20'
                       }`}>
                         {item.active ? 'Activo' : 'Desactivado'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {item.publicId !== currentUser?.publicId ? (
+                      {item.email === 'admin@tuempresa.com' ? (
+                        <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-semibold italic pr-2">Protegido (Sistema)</span>
+                      ) : item.publicId !== currentUser?.publicId ? (
                         <div className="flex justify-end gap-2">
                           <button
+                            disabled={loading || submitting}
                             onClick={() => handleOpenEdit(item)}
-                            className="p-2 border border-slate-800 bg-slate-900/40 hover:bg-slate-850 hover:text-white rounded-lg transition"
+                            className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 hover:text-slate-900 dark:text-zinc-50 rounded-lg transition disabled:opacity-40"
                             title="Editar Perfil/Rol"
                           >
-                            <Edit2 className="h-3.5 w-3.5 text-blue-400" />
+                            <Edit2 className="h-3.5 w-3.5 text-blue-600" />
                           </button>
                           <button
+                            disabled={loading || submitting}
                             onClick={() => handleOpenPassword(item)}
-                            className="p-2 border border-slate-800 bg-slate-900/40 hover:bg-slate-850 hover:text-white rounded-lg transition"
+                            className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 hover:text-slate-900 dark:text-zinc-50 rounded-lg transition disabled:opacity-40"
                             title="Cambiar Contraseña"
                           >
                             <Key className="h-3.5 w-3.5 text-amber-500" />
                           </button>
                           <button
+                            disabled={loading || submitting}
                             onClick={() => handleToggleStatus(item)}
-                            className="p-2 border border-slate-800 bg-slate-900/40 hover:bg-slate-850 rounded-lg transition"
+                            className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 rounded-lg transition disabled:opacity-40"
                             title={item.active ? 'Desactivar Cuenta' : 'Activar Cuenta'}
                           >
                             {item.active ? (
                               <ToggleRight className="h-4.5 w-4.5 text-emerald-400" />
                             ) : (
-                              <ToggleLeft className="h-4.5 w-4.5 text-slate-500" />
+                              <ToggleLeft className="h-4.5 w-4.5 text-slate-600 dark:text-zinc-300" />
                             )}
                           </button>
                         </div>
                       ) : (
-                        <span className="text-[10px] text-slate-550 italic pr-2">Sesión Activa</span>
+                        <span className="text-[10px] text-slate-600 dark:text-zinc-300 italic pr-2">Sesión Activa</span>
                       )}
                     </td>
                   </tr>
@@ -322,26 +356,26 @@ export default function UsersTable() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="border-t border-slate-850 bg-slate-900/20 px-6 py-4 flex items-center justify-between">
-              <span className="text-xs text-slate-500 font-medium">
-                Mostrando <span className="text-slate-350">{users.length}</span> de{' '}
-                <span className="text-slate-350">{totalElements}</span> resultados
+            <div className="border-t border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 px-6 py-4 flex items-center justify-between">
+              <span className="text-xs text-slate-600 dark:text-zinc-300 font-medium">
+                Mostrando <span className="text-slate-700 dark:text-zinc-200">{users.length}</span> de{' '}
+                <span className="text-slate-700 dark:text-zinc-200">{totalElements}</span> resultados
               </span>
               <div className="flex gap-2">
                 <button
                   disabled={page === 0}
                   onClick={() => setPage(page - 1)}
-                  className="p-2 border border-slate-800 bg-slate-950 hover:bg-slate-850 disabled:opacity-40 rounded-lg text-slate-400 hover:text-white transition"
+                  className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 disabled:opacity-40 rounded-lg text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <span className="flex items-center px-3 py-1 border border-slate-800 bg-slate-950 rounded-lg font-bold text-slate-350">
+                <span className="flex items-center px-3 py-1 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-lg font-bold text-slate-700 dark:text-zinc-200">
                   {page + 1} / {totalPages}
                 </span>
                 <button
                   disabled={page >= totalPages - 1}
                   onClick={() => setPage(page + 1)}
-                  className="p-2 border border-slate-800 bg-slate-950 hover:bg-slate-850 disabled:opacity-40 rounded-lg text-slate-400 hover:text-white transition"
+                  className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 disabled:opacity-40 rounded-lg text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -354,18 +388,18 @@ export default function UsersTable() {
       {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleCreateSubmit} className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden">
+          <form onSubmit={handleCreateSubmit} className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl shadow-sm w-full max-w-md shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-blue-600" />
-            <div className="px-6 py-5 border-b border-slate-850 flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">Registrar Usuario</h3>
-              <button type="button" onClick={() => setShowCreateModal(false)} className="text-slate-455 hover:text-white">
+            <div className="px-6 py-5 border-b border-slate-200 dark:border-zinc-700 flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 dark:text-zinc-50">Registrar Usuario</h3>
+              <button type="button" onClick={() => setShowCreateModal(false)} className="text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:text-zinc-100 p-1 rounded-lg hover:bg-slate-100 transition">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-4">
               {formError && (
-                <div className="p-3 bg-rose-500/5 border border-rose-900/40 text-rose-455 rounded-xl text-xs flex items-center gap-2">
+                <div className="p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-950/50 text-rose-700 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
                   {formError}
                 </div>
@@ -373,72 +407,63 @@ export default function UsersTable() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-450 font-semibold">Nombre *</label>
+                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Nombre *</label>
                   <input
                     type="text"
                     required
                     value={formFirstName}
                     onChange={(e) => setFormFirstName(e.target.value)}
                     placeholder="Ej: Laura"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-white"
+                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-450 font-semibold">Apellido *</label>
+                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Apellido *</label>
                   <input
                     type="text"
                     required
                     value={formLastName}
                     onChange={(e) => setFormLastName(e.target.value)}
                     placeholder="Ej: Gómez"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-white"
+                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-slate-450 font-semibold">Correo Electrónico *</label>
+                <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Correo Electrónico *</label>
                 <input
                   type="email"
                   required
                   value={formEmail}
                   onChange={(e) => setFormEmail(e.target.value)}
-                  placeholder="ejemplo@vdenergy.es"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-white"
+                  placeholder="ejemplo@tuempresa.com"
+                  className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-450 font-semibold">Rol Asignado *</label>
-                  <select
-                    value={formRole}
-                    onChange={(e) => setFormRole(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-white"
-                  >
-                    <option value="TECNICO">TECNICO</option>
-                    <option value="ADMIN">ADMIN (ADMINISTRADOR)</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-450 font-semibold">Contraseña *</label>
-                  <input
-                    type="password"
-                    required
-                    value={formPassword}
-                    onChange={(e) => setFormPassword(e.target.value)}
-                    placeholder="Mínimo 8 caracteres"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-white"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Rol Asignado *</label>
+                <select
+                  value={formRole}
+                  onChange={(e) => setFormRole(e.target.value)}
+                  className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50"
+                >
+                  <option value="TECNICO">TECNICO</option>
+                  <option value="ADMIN">ADMIN (ADMINISTRADOR)</option>
+                </select>
               </div>
+
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-2 italic">
+                * Las credenciales de acceso se generarán aleatoriamente y se enviarán automáticamente por correo al nuevo usuario.
+              </p>
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-850 flex justify-end gap-2 bg-slate-900/60">
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-zinc-700 flex justify-end gap-2 bg-slate-50 dark:bg-zinc-900">
               <button
                 type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 border border-slate-800 hover:bg-slate-800 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition"
+                className="px-4 py-2 border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
               >
                 Cancelar
               </button>
@@ -448,7 +473,7 @@ export default function UsersTable() {
                 className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-xs font-bold text-white transition flex items-center gap-2"
               >
                 {submitting && <Loader2 className="h-3 w-3 animate-spin" />}
-                Guardar Usuario
+                Registrar y Enviar Credenciales
               </button>
             </div>
           </form>
@@ -458,18 +483,18 @@ export default function UsersTable() {
       {/* Edit Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleEditSubmit} className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden">
+          <form onSubmit={handleEditSubmit} className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl shadow-sm w-full max-w-md shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-blue-600" />
-            <div className="px-6 py-5 border-b border-slate-850 flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">Editar Usuario</h3>
-              <button type="button" onClick={() => setShowEditModal(false)} className="text-slate-455 hover:text-white">
+            <div className="px-6 py-5 border-b border-slate-200 dark:border-zinc-700 flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 dark:text-zinc-50">Editar Usuario</h3>
+              <button type="button" onClick={() => setShowEditModal(false)} className="text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:text-zinc-100 p-1 rounded-lg hover:bg-slate-100 transition">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-4">
               {formError && (
-                <div className="p-3 bg-rose-500/5 border border-rose-900/40 text-rose-455 rounded-xl text-xs flex items-center gap-2">
+                <div className="p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-950/50 text-rose-700 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
                   {formError}
                 </div>
@@ -477,44 +502,44 @@ export default function UsersTable() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-450 font-semibold">Nombre *</label>
+                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Nombre *</label>
                   <input
                     type="text"
                     required
                     value={formFirstName}
                     onChange={(e) => setFormFirstName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-white"
+                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-450 font-semibold">Apellido *</label>
+                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Apellido *</label>
                   <input
                     type="text"
                     required
                     value={formLastName}
                     onChange={(e) => setFormLastName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-white"
+                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-slate-450 font-semibold">Correo Electrónico *</label>
+                <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Correo Electrónico *</label>
                 <input
                   type="email"
                   required
                   value={formEmail}
                   onChange={(e) => setFormEmail(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-white"
+                  className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-slate-450 font-semibold">Rol Asignado *</label>
+                <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Rol Asignado *</label>
                 <select
                   value={formRole}
                   onChange={(e) => setFormRole(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-white"
+                  className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50"
                 >
                   <option value="TECNICO">TECNICO</option>
                   <option value="ADMIN">ADMIN</option>
@@ -522,11 +547,11 @@ export default function UsersTable() {
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-850 flex justify-end gap-2 bg-slate-900/60">
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-zinc-700 flex justify-end gap-2 bg-slate-50 dark:bg-zinc-900">
               <button
                 type="button"
                 onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 border border-slate-800 hover:bg-slate-850 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition"
+                className="px-4 py-2 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
               >
                 Cancelar
               </button>
@@ -546,56 +571,56 @@ export default function UsersTable() {
       {/* Password Reset Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handlePasswordSubmit} className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl relative overflow-hidden">
+          <form onSubmit={handlePasswordSubmit} className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl shadow-sm w-full max-w-sm shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
-            <div className="px-6 py-5 border-b border-slate-850 flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">Reestablecer Contraseña</h3>
-              <button type="button" onClick={() => setShowPasswordModal(false)} className="text-slate-455 hover:text-white">
+            <div className="px-6 py-5 border-b border-slate-200 dark:border-zinc-700 flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 dark:text-zinc-50">Reestablecer Contraseña</h3>
+              <button type="button" onClick={() => setShowPasswordModal(false)} className="text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:text-zinc-100 p-1 rounded-lg hover:bg-slate-100 transition">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-4">
               {formError && (
-                <div className="p-3 bg-rose-500/5 border border-rose-900/40 text-rose-455 rounded-xl text-xs flex items-center gap-2">
+                <div className="p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-950/50 text-rose-700 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
                   {formError}
                 </div>
               )}
 
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-slate-600 dark:text-zinc-300 leading-relaxed">
                 Estás forzando un cambio de credenciales para el usuario{' '}
-                <span className="font-bold text-white">
+                <span className="font-bold text-slate-900 dark:text-zinc-50">
                   {selectedUser?.firstName} {selectedUser?.lastName}
                 </span>
                 .
               </p>
 
               <div className="space-y-1">
-                <label className="text-xs text-slate-450 font-semibold">Nueva Contraseña *</label>
+                <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Nueva Contraseña *</label>
                 <input
                   type="password"
                   required
                   value={formPassword}
                   onChange={(e) => setFormPassword(e.target.value)}
                   placeholder="Mínimo 8 caracteres"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-white"
+                  className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50"
                 />
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-850 flex justify-end gap-2 bg-slate-900/60">
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-zinc-700 flex justify-end gap-2 bg-slate-50 dark:bg-zinc-900">
               <button
                 type="button"
                 onClick={() => setShowPasswordModal(false)}
-                className="px-4 py-2 border border-slate-800 hover:bg-slate-800 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition"
+                className="px-4 py-2 border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-xs font-bold text-slate-900 transition flex items-center gap-2"
+                className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-xs font-bold text-white transition flex items-center gap-2"
               >
                 {submitting && <Loader2 className="h-3 w-3 animate-spin" />}
                 Reestablecer Contraseña
