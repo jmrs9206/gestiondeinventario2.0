@@ -32,14 +32,14 @@ INSERT INTO users (id, public_id, first_name, last_name, email, password_hash, r
 
 -- 3. Insert Materials
 INSERT INTO materials (id, public_code, material_type, brand, model, serial_number, office_id, status, qr_generated_at, qr_version, active) VALUES
-(1, 'mat_mon_001', 'MONITOR', 'LG', '27UL500-W', 'SN-LG-998822', 1, 'OPERATIVO', NOW(), 1, 1),
-(2, 'mat_aud_001', 'AUDIFONOS', 'SONY', 'WH-1000XM4', 'SN-SONY-334455', 2, 'OPERATIVO', NOW(), 1, 1),
-(3, 'mat_tec_001', 'TECLADO', 'LOGITECH', 'MX KEYS', 'SN-LOGI-881133', 3, 'OPERATIVO', NOW(), 1, 1),
-(4, 'mat_rat_001', 'RATON', 'LOGITECH', 'MX MASTER 3', 'SN-LOGI-556677', 4, 'OPERATIVO', NOW(), 1, 1),
-(5, 'mat_mon_002', 'MONITOR', 'DELL', 'U2419H', 'SN-DELL-112233', 5, 'EN_REPARACION', NOW(), 1, 1),
-(6, 'mat_tec_002', 'TECLADO', 'CORSAIR', 'K70 RGB', 'SN-CORS-445566', 6, 'ROTO', NOW(), 1, 1),
-(7, 'mat_rat_002', 'RATON', 'RAZER', 'DEATHADDER', 'SN-RAZE-990011', 1, 'OPERATIVO', NOW(), 1, 1),
-(8, 'mat_aud_002', 'AUDIFONOS', 'BOSE', 'QUIETCOMFORT 45', 'SN-BOSE-445566', 2, 'BAJA', NOW(), 1, 1);
+(1, 'mat_mjmMqa2WSeCPqTzI9MMG', 'MONITOR', 'LG', '27UL500-W', 'SN-LG-998822', 1, 'OPERATIVO', NOW(), 1, 1),
+(2, 'mat_wh8DxEA6je2efSgsDhdk', 'AUDIFONOS', 'SONY', 'WH-1000XM4', 'SN-SONY-334455', 2, 'OPERATIVO', NOW(), 1, 1),
+(3, 'mat_pkvPBH37D2EIT02tTTtI', 'TECLADO', 'LOGITECH', 'MX KEYS', 'SN-LOGI-881133', 3, 'OPERATIVO', NOW(), 1, 1),
+(4, 'mat_nLg0Ry77oqxM0PeZwzey', 'RATON', 'LOGITECH', 'MX MASTER 3', 'SN-LOGI-556677', 4, 'OPERATIVO', NOW(), 1, 1),
+(5, 'mat_wi6tTujpaJIC5cHupjmA', 'MONITOR', 'DELL', 'U2419H', 'SN-DELL-112233', 5, 'EN_REPARACION', NOW(), 1, 1),
+(6, 'mat_ZxugYHXyUUTFc6uibtXb', 'TECLADO', 'CORSAIR', 'K70 RGB', 'SN-CORS-445566', 6, 'ROTO', NOW(), 1, 1),
+(7, 'mat_Ic7smKf93Lu6wFFrUXNA', 'RATON', 'RAZER', 'DEATHADDER', 'SN-RAZE-990011', 1, 'OPERATIVO', NOW(), 1, 1),
+(8, 'mat_9ofMM4lq8Iz0An8BOdgC', 'AUDIFONOS', 'BOSE', 'QUIETCOMFORT 45', 'SN-BOSE-445566', 2, 'BAJA', NOW(), 1, 1);
 
 -- 4. Insert Material History (Movements)
 INSERT INTO material_history (id, material_id, action, previous_status, new_status, previous_office_id, new_office_id, comment, performed_by_user_id, created_at) VALUES
@@ -66,7 +66,7 @@ INSERT INTO material_history (id, material_id, action, previous_status, new_stat
 -- 5. Insert Audit Logs
 INSERT INTO audit_log (id, entity_type, entity_id, action, performed_by_type, performed_by_id, ip_address, user_agent, created_at) VALUES
 (1, 'Office', 'off_madrid_001', 'OFFICE_CREATED', 'USER', '3a9f0e22-83b1-4c6e-8d8a-9f5b2e3e1c6f', '127.0.0.1', 'Mozilla/5.0', '2026-05-22 08:30:00'),
-(2, 'Material', 'mat_mon_001', 'MATERIAL_CREATED', 'USER', '3a9f0e22-83b1-4c6e-8d8a-9f5b2e3e1c6f', '127.0.0.1', 'Mozilla/5.0', '2026-05-22 09:00:00'),
-(3, 'Material', 'mat_mon_002', 'MATERIAL_STATUS_CHANGED', 'USER', 'usr_tecnico_001', '127.0.0.1', 'Mozilla/5.0', '2026-06-01 12:00:00'),
-(4, 'Material', 'mat_tec_002', 'MATERIAL_STATUS_CHANGED', 'USER', 'usr_tecnico_001', '127.0.0.1', 'Mozilla/5.0', '2026-06-08 14:15:00'),
-(5, 'Material', 'mat_aud_002', 'MATERIAL_DECOMMISSIONED', 'USER', '3a9f0e22-83b1-4c6e-8d8a-9f5b2e3e1c6f', '127.0.0.1', 'Mozilla/5.0', '2026-06-12 12:00:00');
+(2, 'Material', 'mat_mjmMqa2WSeCPqTzI9MMG', 'MATERIAL_CREATED', 'USER', '3a9f0e22-83b1-4c6e-8d8a-9f5b2e3e1c6f', '127.0.0.1', 'Mozilla/5.0', '2026-05-22 09:00:00'),
+(3, 'Material', 'mat_wi6tTujpaJIC5cHupjmA', 'MATERIAL_STATUS_CHANGED', 'USER', 'usr_tecnico_001', '127.0.0.1', 'Mozilla/5.0', '2026-06-01 12:00:00'),
+(4, 'Material', 'mat_ZxugYHXyUUTFc6uibtXb', 'MATERIAL_STATUS_CHANGED', 'USER', 'usr_tecnico_001', '127.0.0.1', 'Mozilla/5.0', '2026-06-08 14:15:00'),
+(5, 'Material', 'mat_9ofMM4lq8Iz0An8BOdgC', 'MATERIAL_DECOMMISSIONED', 'USER', '3a9f0e22-83b1-4c6e-8d8a-9f5b2e3e1c6f', '127.0.0.1', 'Mozilla/5.0', '2026-06-12 12:00:00');
