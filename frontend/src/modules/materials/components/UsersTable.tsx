@@ -288,9 +288,7 @@ export default function UsersTable() {
               <tbody className="divide-y divide-slate-100 dark:divide-zinc-700">
                 {users.map((item) => (
                   <tr key={item.publicId} className="hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 transition-colors">
-                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-zinc-50">
-                      {item.firstName} {item.lastName}
-                    </td>
+                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-zinc-50">{item.firstName} {item.lastName}</td>
                     <td className="px-6 py-4 font-mono text-slate-600 dark:text-zinc-300">{item.email}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase border ${

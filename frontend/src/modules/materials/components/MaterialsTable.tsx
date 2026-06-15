@@ -484,8 +484,7 @@ export default function MaterialsTable() {
   };
 
   const suggestedTypes = Array.from(new Set([
-    'ROUTER', 'SWITCH', 'ACCESS POINT', 'ORDENADOR', 'PORTATIL',
-    'TELEFONO', 'IMPRESORA', 'PANTALLA', 'TECLADO', 'RATON',
+    'MONITOR', 'AUDIFONOS', 'TECLADO', 'RATON',
     ...materials.map(m => m.materialType.toUpperCase())
   ]));
 

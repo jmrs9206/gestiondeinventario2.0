@@ -27,7 +27,7 @@ test.describe('Autenticación y Login E2E', () => {
   test('debe iniciar sesión exitosamente con el administrador por defecto', async ({ page }) => {
     // Usar credenciales del administrador por defecto inyectadas en bootstrap
     await page.fill('#email', 'admin@tuempresa.com');
-    await page.fill('#password', 'vd_admin_z2X4m7P1v9R8s3T5');
+    await page.fill('#password', 'jmvzsDX1fbK78OnpMMm6');
     await page.click('button[type="submit"]');
 
     // Debe redirigir exitosamente a la página de dashboard
