@@ -5,6 +5,7 @@ services:
     image: mysql:8.4
     container_name: stockflow_mysql_db
     restart: always
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
@@ -35,7 +36,7 @@ services:
       - .env
     environment:
       # Inject actual DB host to connect internally in the Docker network
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql_db:3306/${DB_NAME}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql_db:3306/${DB_NAME}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=UTF-8"
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
     depends_on:
