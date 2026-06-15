@@ -61,8 +61,7 @@ describe('UsersTable', () => {
     expect(screen.getByText('Administración de Usuarios')).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText(/Juan/)).toBeInTheDocument();
-      expect(screen.getByText(/Pérez/)).toBeInTheDocument();
+      expect(screen.getByText('Juan Pérez')).toBeInTheDocument();
       expect(screen.getByText('juan.perez@tuempresa.com')).toBeInTheDocument();
       expect(screen.getAllByText('Activo')[0]).toBeInTheDocument();
       expect(screen.getByText('Protegido (Sistema)')).toBeInTheDocument();
