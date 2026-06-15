@@ -59,9 +59,11 @@ INSERT INTO material_history (id, material_id, action, previous_status, new_stat
 (8, 6, 'CAMBIO_ESTADO', 'OPERATIVO', 'ROTO', 6, 6, 'Daño físico por derrame de líquidos.', 2, '2026-06-08 14:15:00'),
 -- Raton 002
 (9, 7, 'REGISTRO', NULL, 'OPERATIVO', NULL, 1, 'Ratón Razer registrado en Madrid.', 1, '2026-05-28 09:30:00'),
--- Audifonos 002
 (10, 8, 'REGISTRO', NULL, 'OPERATIVO', NULL, 2, 'Audífonos Bose registrados en Medellín.', 2, '2026-05-22 10:00:00'),
-(11, 8, 'BAJA', 'OPERATIVO', 'BAJA', 2, 2, 'Desgaste irreparable de almohadillas y diadema.', 1, '2026-06-12 12:00:00');
+(11, 8, 'BAJA', 'OPERATIVO', 'BAJA', 2, 2, 'Desgaste irreparable de almohadillas y diadema.', 1, '2026-06-12 12:00:00'),
+-- Monitor 001 - completed repair cycle example (52 hours duration)
+(12, 1, 'CAMBIO_ESTADO', 'OPERATIVO', 'EN_REPARACION', 1, 1, 'Fallo en puerto HDMI, se envía a servicio técnico oficial.', 2, '2026-06-03 10:00:00'),
+(13, 1, 'CAMBIO_ESTADO', 'EN_REPARACION', 'OPERATIVO', 1, 1, 'Puerto HDMI reemplazado y testeado correctamente.', 2, '2026-06-05 14:00:00');
 
 -- 5. Insert Audit Logs
 INSERT INTO audit_log (id, entity_type, entity_id, action, performed_by_type, performed_by_id, ip_address, user_agent, created_at) VALUES
