@@ -313,11 +313,11 @@ function DashboardPageContent() {
                   </div>
                 </div>
 
-                {/* Materiales sobrantes */}
+                {/* Componentes Libres */}
                 <div className="rounded-2xl bg-slate-50 dark:bg-zinc-900/30 border border-slate-200 dark:border-zinc-800/80 p-4 text-xs flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
                   <div className="flex flex-col gap-0.5">
-                    <span className="font-bold text-slate-700 dark:text-zinc-300 text-sm">Materiales sueltos (sobrantes):</span>
-                    <span className="text-slate-500 dark:text-zinc-400">Componentes operativos en inventario que no alcanzan a completar un puesto de trabajo.</span>
+                    <span className="font-bold text-slate-700 dark:text-zinc-300 text-sm">Componentes Libres (en Reserva):</span>
+                    <span className="text-slate-500 dark:text-zinc-400">Equipos operativos disponibles para reemplazo de incidencias o ensamblaje de nuevos puestos.</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <span className="bg-white dark:bg-zinc-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 font-medium flex items-center gap-1.5 shadow-sm">
