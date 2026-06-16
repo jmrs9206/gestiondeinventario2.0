@@ -39,7 +39,27 @@ INSERT INTO materials (id, public_code, material_type, brand, model, serial_numb
 (5, 'mat_wi6tTujpaJIC5cHupjmA', 'MONITOR', 'DELL', 'U2419H', 'SN-DELL-112233', 5, 'EN_REPARACION', NOW(), 1, 1),
 (6, 'mat_ZxugYHXyUUTFc6uibtXb', 'TECLADO', 'CORSAIR', 'K70 RGB', 'SN-CORS-445566', 6, 'ROTO', NOW(), 1, 1),
 (7, 'mat_Ic7smKf93Lu6wFFrUXNA', 'RATON', 'RAZER', 'DEATHADDER', 'SN-RAZE-990011', 1, 'OPERATIVO', NOW(), 1, 1),
-(8, 'mat_9ofMM4lq8Iz0An8BOdgC', 'AUDIFONOS', 'BOSE', 'QUIETCOMFORT 45', 'SN-BOSE-445566', 2, 'BAJA', NOW(), 1, 1);
+(8, 'mat_9ofMM4lq8Iz0An8BOdgC', 'AUDIFONOS', 'BOSE', 'QUIETCOMFORT 45', 'SN-BOSE-445566', 2, 'BAJA', NOW(), 1, 1),
+-- Madrid Office (Office 1): We need M=3, T=2, R=2, A=3 (ID 1 is MONITOR, ID 7 is RATON)
+-- Adding: 2 Monitors, 2 Keyboards, 1 Mouse, 3 Headphones
+(9, 'mat_madrid_monitor_002', 'MONITOR', 'LG', '27UL500-W', 'SN-LG-998823', 1, 'OPERATIVO', NOW(), 1, 1),
+(10, 'mat_madrid_monitor_003', 'MONITOR', 'LG', '27UL500-W', 'SN-LG-998824', 1, 'OPERATIVO', NOW(), 1, 1),
+(11, 'mat_madrid_teclado_001', 'TECLADO', 'LOGITECH', 'MX KEYS', 'SN-LOGI-881134', 1, 'OPERATIVO', NOW(), 1, 1),
+(12, 'mat_madrid_teclado_002', 'TECLADO', 'LOGITECH', 'MX KEYS', 'SN-LOGI-881135', 1, 'OPERATIVO', NOW(), 1, 1),
+(13, 'mat_madrid_raton_002', 'RATON', 'LOGITECH', 'MX MASTER 3', 'SN-LOGI-556678', 1, 'OPERATIVO', NOW(), 1, 1),
+(14, 'mat_madrid_audifonos_001', 'AUDIFONOS', 'SONY', 'WH-1000XM4', 'SN-SONY-334456', 1, 'OPERATIVO', NOW(), 1, 1),
+(15, 'mat_madrid_audifonos_002', 'AUDIFONOS', 'SONY', 'WH-1000XM4', 'SN-SONY-334457', 1, 'OPERATIVO', NOW(), 1, 1),
+(16, 'mat_madrid_audifonos_003', 'AUDIFONOS', 'SONY', 'WH-1000XM4', 'SN-SONY-334458', 1, 'OPERATIVO', NOW(), 1, 1),
+-- Medellin Office (Office 2): We need M=3, T=2, R=2, A=2 (ID 2 is AUDIFONOS)
+-- Adding: 3 Monitors, 2 Keyboards, 2 Mice, 1 Headphone
+(17, 'mat_medellin_monitor_001', 'MONITOR', 'DELL', 'U2419H', 'SN-DELL-112234', 2, 'OPERATIVO', NOW(), 1, 1),
+(18, 'mat_medellin_monitor_002', 'MONITOR', 'DELL', 'U2419H', 'SN-DELL-112235', 2, 'OPERATIVO', NOW(), 1, 1),
+(19, 'mat_medellin_monitor_003', 'MONITOR', 'DELL', 'U2419H', 'SN-DELL-112236', 2, 'OPERATIVO', NOW(), 1, 1),
+(20, 'mat_medellin_teclado_001', 'TECLADO', 'CORSAIR', 'K70 RGB', 'SN-CORS-445567', 2, 'OPERATIVO', NOW(), 1, 1),
+(21, 'mat_medellin_teclado_002', 'TECLADO', 'CORSAIR', 'K70 RGB', 'SN-CORS-445568', 2, 'OPERATIVO', NOW(), 1, 1),
+(22, 'mat_medellin_raton_001', 'RATON', 'RAZER', 'DEATHADDER', 'SN-RAZE-990012', 2, 'OPERATIVO', NOW(), 1, 1),
+(23, 'mat_medellin_raton_002', 'RATON', 'RAZER', 'DEATHADDER', 'SN-RAZE-990013', 2, 'OPERATIVO', NOW(), 1, 1),
+(24, 'mat_medellin_audifonos_002', 'AUDIFONOS', 'SONY', 'WH-1000XM4', 'SN-SONY-334460', 2, 'OPERATIVO', NOW(), 1, 1);
 
 -- 4. Insert Material History (Movements)
 INSERT INTO material_history (id, material_id, action, previous_status, new_status, previous_office_id, new_office_id, comment, performed_by_user_id, created_at) VALUES
