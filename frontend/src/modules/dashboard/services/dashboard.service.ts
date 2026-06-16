@@ -15,6 +15,10 @@ export interface DashboardKpis {
   completeWorkstations: number;
   partialWorkstations: number;
   specialWorkstations: number;
+  leftoverMonitors: number;
+  leftoverKeyboards: number;
+  leftoverMice: number;
+  leftoverHeadphones: number;
 }
 
 export interface MaterialHistoryResponse {

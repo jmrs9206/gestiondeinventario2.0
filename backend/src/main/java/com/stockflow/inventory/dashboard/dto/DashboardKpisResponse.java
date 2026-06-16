@@ -12,11 +12,15 @@ public class DashboardKpisResponse {
     private long completeWorkstations;
     private long partialWorkstations;
     private long specialWorkstations;
+    private long leftoverMonitors;
+    private long leftoverKeyboards;
+    private long leftoverMice;
+    private long leftoverHeadphones;
 
     public DashboardKpisResponse() {
     }
 
-    public DashboardKpisResponse(long totalMaterials, Map<String, Long> statusCounts, List<OfficeCountDto> officeCounts, long incidencesCount, Double meanRepairTimeInHours, long completeWorkstations, long partialWorkstations, long specialWorkstations) {
+    public DashboardKpisResponse(long totalMaterials, Map<String, Long> statusCounts, List<OfficeCountDto> officeCounts, long incidencesCount, Double meanRepairTimeInHours, long completeWorkstations, long partialWorkstations, long specialWorkstations, long leftoverMonitors, long leftoverKeyboards, long leftoverMice, long leftoverHeadphones) {
         this.totalMaterials = totalMaterials;
         this.statusCounts = statusCounts;
         this.officeCounts = officeCounts;
@@ -25,6 +29,10 @@ public class DashboardKpisResponse {
         this.completeWorkstations = completeWorkstations;
         this.partialWorkstations = partialWorkstations;
         this.specialWorkstations = specialWorkstations;
+        this.leftoverMonitors = leftoverMonitors;
+        this.leftoverKeyboards = leftoverKeyboards;
+        this.leftoverMice = leftoverMice;
+        this.leftoverHeadphones = leftoverHeadphones;
     }
 
     public long getTotalMaterials() {
@@ -89,5 +97,37 @@ public class DashboardKpisResponse {
 
     public void setSpecialWorkstations(long specialWorkstations) {
         this.specialWorkstations = specialWorkstations;
+    }
+
+    public long getLeftoverMonitors() {
+        return leftoverMonitors;
+    }
+
+    public void setLeftoverMonitors(long leftoverMonitors) {
+        this.leftoverMonitors = leftoverMonitors;
+    }
+
+    public long getLeftoverKeyboards() {
+        return leftoverKeyboards;
+    }
+
+    public void setLeftoverKeyboards(long leftoverKeyboards) {
+        this.leftoverKeyboards = leftoverKeyboards;
+    }
+
+    public long getLeftoverMice() {
+        return leftoverMice;
+    }
+
+    public void setLeftoverMice(long leftoverMice) {
+        this.leftoverMice = leftoverMice;
+    }
+
+    public long getLeftoverHeadphones() {
+        return leftoverHeadphones;
+    }
+
+    public void setLeftoverHeadphones(long leftoverHeadphones) {
+        this.leftoverHeadphones = leftoverHeadphones;
     }
 }

@@ -204,6 +204,10 @@ class DashboardControllerTest {
                 // Workstation counts
                 .andExpect(jsonPath("$.data.completeWorkstations").value(0))
                 .andExpect(jsonPath("$.data.partialWorkstations").value(0))
-                .andExpect(jsonPath("$.data.specialWorkstations").value(0));
+                .andExpect(jsonPath("$.data.specialWorkstations").value(0))
+                .andExpect(jsonPath("$.data.leftoverMonitors").value(0))
+                .andExpect(jsonPath("$.data.leftoverKeyboards").value(0))
+                .andExpect(jsonPath("$.data.leftoverMice").value(0))
+                .andExpect(jsonPath("$.data.leftoverHeadphones").value(0));
     }
 }

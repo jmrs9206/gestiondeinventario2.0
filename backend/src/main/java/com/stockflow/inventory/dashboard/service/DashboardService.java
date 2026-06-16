@@ -126,6 +126,10 @@ public class DashboardService {
         long totalComplete = 0;
         long totalPartial = 0;
         long totalSpecial = 0;
+        long leftoverMonitors = 0;
+        long leftoverKeyboards = 0;
+        long leftoverMice = 0;
+        long leftoverHeadphones = 0;
 
         Map<String, List<Material>> operationalMaterialsByOffice = allMaterials.stream()
                 .filter(m -> m.isActive() && m.getStatus() == MaterialStatus.OPERATIVO && m.getOffice() != null && m.getOffice().getPublicId() != null)
@@ -168,6 +172,16 @@ public class DashboardService {
 
             // 3. Partial: 1 monitor, 1 keyboard, 1 mouse, 1 headphone
             long partial = Math.min(monitors, Math.min(keyboards, Math.min(mice, headphones)));
+            monitors -= partial;
+            keyboards -= partial;
+            mice -= partial;
+            headphones -= partial;
+
+            // Accumulate leftovers
+            leftoverMonitors += monitors;
+            leftoverKeyboards += keyboards;
+            leftoverMice += mice;
+            leftoverHeadphones += headphones;
 
             totalSpecial += special;
             totalComplete += complete;
@@ -182,7 +196,11 @@ public class DashboardService {
                 meanRepairTimeInHours,
                 totalComplete,
                 totalPartial,
-                totalSpecial
+                totalSpecial,
+                leftoverMonitors,
+                leftoverKeyboards,
+                leftoverMice,
+                leftoverHeadphones
         );
     }
 }
