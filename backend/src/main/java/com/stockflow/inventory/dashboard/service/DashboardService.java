@@ -122,12 +122,67 @@ public class DashboardService {
 
         Double meanRepairTimeInHours = completedRepairsCount > 0 ? (totalHours / completedRepairsCount) : 0.0;
 
+        // Calculate Workstation KPIs
+        long totalComplete = 0;
+        long totalPartial = 0;
+        long totalSpecial = 0;
+
+        Map<String, List<Material>> operationalMaterialsByOffice = allMaterials.stream()
+                .filter(m -> m.isActive() && m.getStatus() == MaterialStatus.OPERATIVO && m.getOffice() != null && m.getOffice().getPublicId() != null)
+                .collect(Collectors.groupingBy(m -> m.getOffice().getPublicId()));
+
+        for (Map.Entry<String, List<Material>> entry : operationalMaterialsByOffice.entrySet()) {
+            List<Material> officeMaterials = entry.getValue();
+            long monitors = 0;
+            long keyboards = 0;
+            long mice = 0;
+            long headphones = 0;
+
+            for (Material m : officeMaterials) {
+                String type = m.getMaterialType() != null ? m.getMaterialType().trim().toUpperCase() : "";
+                type = type.replace("Ó", "O").replace("Í", "I").replace("Á", "A").replace("É", "E").replace("Ú", "U");
+                if (type.contains("MONITOR")) {
+                    monitors++;
+                } else if (type.contains("TECLADO")) {
+                    keyboards++;
+                } else if (type.contains("RATON")) {
+                    mice++;
+                } else if (type.contains("AUDIFONO")) {
+                    headphones++;
+                }
+            }
+
+            // 1. Special: 2 monitors, 1 keyboard, 1 mouse, 1 headphone
+            long special = Math.min(monitors / 2, Math.min(keyboards, Math.min(mice, headphones)));
+            monitors -= special * 2;
+            keyboards -= special;
+            mice -= special;
+            headphones -= special;
+
+            // 2. Complete: 1 monitor, 1 keyboard, 1 mouse, 2 headphones
+            long complete = Math.min(monitors, Math.min(keyboards, Math.min(mice, headphones / 2)));
+            monitors -= complete;
+            keyboards -= complete;
+            mice -= complete;
+            headphones -= complete * 2;
+
+            // 3. Partial: 1 monitor, 1 keyboard, 1 mouse, 1 headphone
+            long partial = Math.min(monitors, Math.min(keyboards, Math.min(mice, headphones)));
+
+            totalSpecial += special;
+            totalComplete += complete;
+            totalPartial += partial;
+        }
+
         return new DashboardKpisResponse(
                 totalMaterials,
                 statusCounts,
                 officeCounts,
                 incidencesCount,
-                meanRepairTimeInHours
+                meanRepairTimeInHours,
+                totalComplete,
+                totalPartial,
+                totalSpecial
         );
     }
 }

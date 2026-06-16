@@ -176,7 +176,7 @@ export default function MaterialDetail({ publicCode }: MaterialDetailProps) {
       case 'ROTO':
         return 'bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-950/50';
       case 'BAJA':
-        return 'bg-slate-100 text-slate-600 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700';
+        return 'bg-slate-100 dark:bg-zinc-800/40 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700/50';
       default:
         return 'bg-slate-100 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700';
     }

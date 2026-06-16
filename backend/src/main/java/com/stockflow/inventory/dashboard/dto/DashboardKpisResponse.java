@@ -9,16 +9,22 @@ public class DashboardKpisResponse {
     private List<OfficeCountDto> officeCounts;
     private long incidencesCount;
     private Double meanRepairTimeInHours;
+    private long completeWorkstations;
+    private long partialWorkstations;
+    private long specialWorkstations;
 
     public DashboardKpisResponse() {
     }
 
-    public DashboardKpisResponse(long totalMaterials, Map<String, Long> statusCounts, List<OfficeCountDto> officeCounts, long incidencesCount, Double meanRepairTimeInHours) {
+    public DashboardKpisResponse(long totalMaterials, Map<String, Long> statusCounts, List<OfficeCountDto> officeCounts, long incidencesCount, Double meanRepairTimeInHours, long completeWorkstations, long partialWorkstations, long specialWorkstations) {
         this.totalMaterials = totalMaterials;
         this.statusCounts = statusCounts;
         this.officeCounts = officeCounts;
         this.incidencesCount = incidencesCount;
         this.meanRepairTimeInHours = meanRepairTimeInHours;
+        this.completeWorkstations = completeWorkstations;
+        this.partialWorkstations = partialWorkstations;
+        this.specialWorkstations = specialWorkstations;
     }
 
     public long getTotalMaterials() {
@@ -59,5 +65,29 @@ public class DashboardKpisResponse {
 
     public void setMeanRepairTimeInHours(Double meanRepairTimeInHours) {
         this.meanRepairTimeInHours = meanRepairTimeInHours;
+    }
+
+    public long getCompleteWorkstations() {
+        return completeWorkstations;
+    }
+
+    public void setCompleteWorkstations(long completeWorkstations) {
+        this.completeWorkstations = completeWorkstations;
+    }
+
+    public long getPartialWorkstations() {
+        return partialWorkstations;
+    }
+
+    public void setPartialWorkstations(long partialWorkstations) {
+        this.partialWorkstations = partialWorkstations;
+    }
+
+    public long getSpecialWorkstations() {
+        return specialWorkstations;
+    }
+
+    public void setSpecialWorkstations(long specialWorkstations) {
+        this.specialWorkstations = specialWorkstations;
     }
 }

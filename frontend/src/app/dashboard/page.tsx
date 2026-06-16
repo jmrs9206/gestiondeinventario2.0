@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Package, AlertTriangle, Clock, Activity, RotateCw, Shield } from 'lucide-react';
+import { Package, AlertTriangle, Clock, Activity, RotateCw, Shield, Monitor, Headphones, Sparkles } from 'lucide-react';
 import {
   fetchDashboardKpis,
   fetchRecentMovements,
@@ -241,6 +241,77 @@ function DashboardPageContent() {
                   description="horas de reparación media"
                   colorClassName="from-violet-600 to-indigo-600"
                 />
+              </div>
+            )}
+
+            {/* Puestos de Trabajo Section */}
+            {kpis && (
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-2">
+                  <h2 className="text-xl font-bold text-slate-800 dark:text-zinc-100 flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-blue-600 animate-pulse" />
+                    Capacidad Operativa de Puestos de Trabajo
+                  </h2>
+                  <span className="text-xs text-slate-500 dark:text-zinc-400">
+                    Cálculo basado en stock operativo disponible por oficina
+                  </span>
+                </div>
+                
+                <div className="grid gap-6 sm:grid-cols-3">
+                  <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-6 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-md hover:border-slate-300">
+                    <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 opacity-5 blur-xl" />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Puestos Especiales</p>
+                        <h3 className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight">
+                          {kpis.specialWorkstations}
+                        </h3>
+                      </div>
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-sm">
+                        <Sparkles className="h-6 w-6" />
+                      </div>
+                    </div>
+                    <div className="mt-4 text-xs text-slate-500 dark:text-zinc-400 font-medium">
+                      Requiere 2 Monitores + Teclado + Ratón + 1 Audífono
+                    </div>
+                  </div>
+
+                  <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-6 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-md hover:border-slate-300">
+                    <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 opacity-5 blur-xl" />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Puestos Completos</p>
+                        <h3 className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight">
+                          {kpis.completeWorkstations}
+                        </h3>
+                      </div>
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 text-white shadow-sm">
+                        <Monitor className="h-6 w-6" />
+                      </div>
+                    </div>
+                    <div className="mt-4 text-xs text-slate-500 dark:text-zinc-400 font-medium">
+                      Requiere 1 Monitor + Teclado + Ratón + 2 Audífonos
+                    </div>
+                  </div>
+
+                  <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-6 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-md hover:border-slate-300">
+                    <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br from-emerald-600 to-teal-600 opacity-5 blur-xl" />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Puestos Parciales</p>
+                        <h3 className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight">
+                          {kpis.partialWorkstations}
+                        </h3>
+                      </div>
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-sm">
+                        <Headphones className="h-6 w-6" />
+                      </div>
+                    </div>
+                    <div className="mt-4 text-xs text-slate-500 dark:text-zinc-400 font-medium">
+                      Requiere 1 Monitor + Teclado + Ratón + 1 Audífono
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

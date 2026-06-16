@@ -20,6 +20,11 @@ export async function DELETE(request: NextRequest, props: { params: Promise<{ pa
   return proxyRequest(request, params.path);
 }
 
+export async function PATCH(request: NextRequest, props: { params: Promise<{ path: string[] }> }) {
+  const params = await props.params;
+  return proxyRequest(request, params.path);
+}
+
 async function proxyRequest(request: NextRequest, pathSegments: string[]) {
   // DB_HOST is set to 'mysql_db' inside Docker Compose network, otherwise use localhost
   const isDocker = process.env.DB_HOST === 'mysql_db';

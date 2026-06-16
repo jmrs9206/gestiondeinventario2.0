@@ -200,6 +200,10 @@ class DashboardControllerTest {
                 .andExpect(jsonPath("$.data.officeCounts[0].name").value("Active Office"))
                 .andExpect(jsonPath("$.data.officeCounts[0].count").value(3))
                 // Mean repair time (2.0 + 3.0) / 2 = 2.5 hours
-                .andExpect(jsonPath("$.data.meanRepairTimeInHours").value(closeTo(2.5, 0.01)));
+                .andExpect(jsonPath("$.data.meanRepairTimeInHours").value(closeTo(2.5, 0.01)))
+                // Workstation counts
+                .andExpect(jsonPath("$.data.completeWorkstations").value(0))
+                .andExpect(jsonPath("$.data.partialWorkstations").value(0))
+                .andExpect(jsonPath("$.data.specialWorkstations").value(0));
     }
 }

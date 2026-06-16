@@ -12,6 +12,9 @@ export interface DashboardKpis {
   officeCounts: OfficeCount[];
   incidencesCount: number;
   meanRepairTimeInHours: number;
+  completeWorkstations: number;
+  partialWorkstations: number;
+  specialWorkstations: number;
 }
 
 export interface MaterialHistoryResponse {
