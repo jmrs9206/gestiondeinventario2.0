@@ -161,4 +161,33 @@ public class AuthService {
             throw new RuntimeException("SHA-256 algorithm not available", e);
         }
     }
+
+    @Transactional
+    public void acceptInvitation(String email, String token, String password) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadCredentialsException("Invitación no válida o expirada."));
+
+        if (!user.isActive()) {
+            throw new BadCredentialsException("La cuenta de usuario está desactivada.");
+        }
+
+        if (user.getInvitationToken() == null || !user.getInvitationToken().equals(token)) {
+            throw new BadCredentialsException("Token de invitación inválido.");
+        }
+
+        if (user.getInvitationTokenExpiry() == null || user.getInvitationTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new BadCredentialsException("La invitación ha expirado. Por favor, solicita una nueva.");
+        }
+
+        // Set the new password
+        user.setPasswordHash(passwordEncoder.encode(password));
+        // Clear invitation fields
+        user.setInvitationToken(null);
+        user.setInvitationTokenExpiry(null);
+        // Set must change password to false since they just defined it
+        user.setMustChangePassword(false);
+
+        userRepository.save(user);
+        auditService.logEvent("User", user.getPublicId(), "INVITATION_ACCEPTED", "USER", user.getPublicId(), "127.0.0.1", "NONE");
+    }
 }

@@ -90,7 +90,7 @@ public class MaterialHistory {
     }
 
     public void setAction(String action) {
-        this.action = action;
+        this.action = com.stockflow.inventory.common.utils.TextNormalizer.normalize(action);
     }
 
     public MaterialStatus getPreviousStatus() {
@@ -148,4 +148,5 @@ public class MaterialHistory {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
 }

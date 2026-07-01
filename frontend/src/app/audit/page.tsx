@@ -7,7 +7,7 @@ import AuditLogsTable from '@/modules/materials/components/AuditLogsTable';
 
 export default function AuditPage() {
   return (
-    <ProtectedRoute allowedRoles={['ADMIN']}>
+    <ProtectedRoute requiredPermission="READ_AUDIT_LOG">
       <Navigation>
         <AuditLogsTable />
       </Navigation>

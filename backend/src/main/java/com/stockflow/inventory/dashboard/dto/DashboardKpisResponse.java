@@ -16,11 +16,12 @@ public class DashboardKpisResponse {
     private long leftoverKeyboards;
     private long leftoverMice;
     private long leftoverHeadphones;
+    private Map<String, Long> materialTypeCounts;
 
     public DashboardKpisResponse() {
     }
 
-    public DashboardKpisResponse(long totalMaterials, Map<String, Long> statusCounts, List<OfficeCountDto> officeCounts, long incidencesCount, Double meanRepairTimeInHours, long completeWorkstations, long partialWorkstations, long specialWorkstations, long leftoverMonitors, long leftoverKeyboards, long leftoverMice, long leftoverHeadphones) {
+    public DashboardKpisResponse(long totalMaterials, Map<String, Long> statusCounts, List<OfficeCountDto> officeCounts, long incidencesCount, Double meanRepairTimeInHours, long completeWorkstations, long partialWorkstations, long specialWorkstations, long leftoverMonitors, long leftoverKeyboards, long leftoverMice, long leftoverHeadphones, Map<String, Long> materialTypeCounts) {
         this.totalMaterials = totalMaterials;
         this.statusCounts = statusCounts;
         this.officeCounts = officeCounts;
@@ -33,6 +34,7 @@ public class DashboardKpisResponse {
         this.leftoverKeyboards = leftoverKeyboards;
         this.leftoverMice = leftoverMice;
         this.leftoverHeadphones = leftoverHeadphones;
+        this.materialTypeCounts = materialTypeCounts;
     }
 
     public long getTotalMaterials() {
@@ -129,5 +131,13 @@ public class DashboardKpisResponse {
 
     public void setLeftoverHeadphones(long leftoverHeadphones) {
         this.leftoverHeadphones = leftoverHeadphones;
+    }
+
+    public Map<String, Long> getMaterialTypeCounts() {
+        return materialTypeCounts;
+    }
+
+    public void setMaterialTypeCounts(Map<String, Long> materialTypeCounts) {
+        this.materialTypeCounts = materialTypeCounts;
     }
 }

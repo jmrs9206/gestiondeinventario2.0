@@ -85,7 +85,10 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").isEmpty()) // Nulled out for security
+                .andExpect(cookie().exists("refreshToken"))
+                .andExpect(cookie().httpOnly("refreshToken", true))
+                .andExpect(cookie().secure("refreshToken", true))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.expiresIn").value(900));
     }
@@ -125,41 +128,44 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
+                .andExpect(cookie().exists("refreshToken"))
                 .andReturn();
 
-        String responseBody = loginResult.getResponse().getContentAsString();
-        String originalRefreshToken = objectMapper.readTree(responseBody).get("refreshToken").asText();
+        jakarta.servlet.http.Cookie originalCookie = loginResult.getResponse().getCookie("refreshToken");
+        assertNotNull(originalCookie);
+        String originalRefreshToken = originalCookie.getValue();
 
-        // 2. Perform refresh
-        RefreshRequest refreshRequest = new RefreshRequest(originalRefreshToken);
+        // 2. Perform refresh using the cookie
         MvcResult refreshResult = mockMvc.perform(post("/api/v1/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(refreshRequest)))
+                        .cookie(originalCookie)
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").isEmpty()) // Nulled out
+                .andExpect(cookie().exists("refreshToken"))
                 .andReturn();
 
-        String refreshResponseBody = refreshResult.getResponse().getContentAsString();
-        String newRefreshToken = objectMapper.readTree(refreshResponseBody).get("refreshToken").asText();
+        jakarta.servlet.http.Cookie newCookie = refreshResult.getResponse().getCookie("refreshToken");
+        assertNotNull(newCookie);
+        String newRefreshToken = newCookie.getValue();
 
         // Verify rotation (original token should be revoked, new token should exist)
         assertNotEquals(originalRefreshToken, newRefreshToken);
 
         // Try to refresh again with the original token (should fail)
         mockMvc.perform(post("/api/v1/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(refreshRequest)))
+                        .cookie(originalCookie)
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void refreshWithInvalidTokenReturns401() throws Exception {
-        RefreshRequest refreshRequest = new RefreshRequest("invalid-uuid-token");
+        jakarta.servlet.http.Cookie invalidCookie = new jakarta.servlet.http.Cookie("refreshToken", "invalid-uuid-token");
 
         mockMvc.perform(post("/api/v1/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(refreshRequest)))
+                        .cookie(invalidCookie)
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Invalid refresh token"));
     }
@@ -172,23 +178,23 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
+                .andExpect(cookie().exists("refreshToken"))
                 .andReturn();
 
-        String responseBody = loginResult.getResponse().getContentAsString();
-        String refreshToken = objectMapper.readTree(responseBody).get("refreshToken").asText();
+        jakarta.servlet.http.Cookie originalCookie = loginResult.getResponse().getCookie("refreshToken");
+        assertNotNull(originalCookie);
 
         // 2. Logout
-        LogoutRequest logoutRequest = new LogoutRequest(refreshToken);
         mockMvc.perform(post("/api/v1/auth/logout")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(logoutRequest)))
-                .andExpect(status().isOk());
+                        .cookie(originalCookie)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("refreshToken", 0)); // Cleared
 
         // 3. Try to refresh using the revoked token (should fail)
-        RefreshRequest refreshRequest = new RefreshRequest(refreshToken);
         mockMvc.perform(post("/api/v1/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(refreshRequest)))
+                        .cookie(originalCookie)
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
     }
 

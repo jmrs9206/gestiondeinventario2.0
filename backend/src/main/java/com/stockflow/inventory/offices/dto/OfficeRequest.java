@@ -14,6 +14,6 @@ public class OfficeRequest {
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name = com.stockflow.inventory.common.utils.TextNormalizer.normalize(name);
     }
 }

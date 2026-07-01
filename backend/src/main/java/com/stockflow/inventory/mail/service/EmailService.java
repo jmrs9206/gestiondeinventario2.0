@@ -91,4 +91,67 @@ public class EmailService {
                 "</body>" +
                 "</html>";
     }
+
+    public void sendInvitationEmail(String toEmail, String firstName, String lastName, String invitationToken) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("Invitación de acceso - StockFlow Gestión de Inventario");
+
+            String htmlContent = buildInvitationHtml(firstName, lastName, toEmail, invitationToken);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Invitation email sent successfully to {}", toEmail);
+        } catch (MessagingException e) {
+            log.error("Failed to send invitation email to {}", toEmail, e);
+            throw new RuntimeException("Error al enviar el correo de invitación: " + e.getMessage());
+        }
+    }
+
+    private String buildInvitationHtml(String firstName, String lastName, String email, String token) {
+        String invitationUrl = frontendUrl + "/login?invitationToken=" + token + "&email=" + email;
+        return "<!DOCTYPE html>" +
+                "<html>" +
+                "<head>" +
+                "  <meta charset='utf-8'>" +
+                "  <style>" +
+                "    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f2eb; color: #1e293b; margin: 0; padding: 20px; }" +
+                "    .container { max-width: 600px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 40px; margin: 0 auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }" +
+                "    .header { border-bottom: 2px solid #3b82f6; padding-bottom: 20px; margin-bottom: 30px; }" +
+                "    .logo { font-size: 24px; font-weight: bold; color: #1e3a8a; }" +
+                "    .title { font-size: 20px; font-weight: 600; margin-top: 0; color: #0f172a; }" +
+                "    .info-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 25px 0; font-size: 14px; }" +
+                "    .btn { display: inline-block; background-color: #2563eb; color: #ffffff !important; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 20px; text-align: center; }" +
+                "    .btn:hover { background-color: #1d4ed8; }" +
+                "    .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; font-size: 12px; color: #64748b; text-align: center; }" +
+                "  </style>" +
+                "</head>" +
+                "<body>" +
+                "  <div class='container'>" +
+                "    <div class='header'>" +
+                "      <div class='logo'>StockFlow</div>" +
+                "    </div>" +
+                "    <h2 class='title'>¡Hola, " + firstName + " " + lastName + "!</h2>" +
+                "    <p>Has sido invitado a formar parte de la aplicación de <strong>Gestión de Inventario de StockFlow</strong>.</p>" +
+                "    <p>Para activar tu cuenta y configurar tu contraseña de acceso, haz clic en el siguiente botón:</p>" +
+                "    <div style='text-align: center;'>" +
+                "      <a href='" + invitationUrl + "' class='btn'>Establecer Contraseña y Activar Cuenta</a>" +
+                "    </div>" +
+                "    <div class='info-box'>" +
+                "      Si el botón de arriba no funciona, puedes copiar y pegar el siguiente enlace en tu navegador:<br>" +
+                "      <a href='" + invitationUrl + "' style='color: #2563eb; word-break: break-all;'>" + invitationUrl + "</a>" +
+                "    </div>" +
+                "    <p>Esta invitación tiene una validez de 7 días.</p>" +
+                "    <div class='footer'>" +
+                "      Este es un correo automático, por favor no respondas a este mensaje.<br>" +
+                "      &copy; " + java.time.Year.now().getValue() + " StockFlow. Todos los derechos reservados." +
+                "    </div>" +
+                "  </div>" +
+                "</body>" +
+                "</html>";
+    }
 }

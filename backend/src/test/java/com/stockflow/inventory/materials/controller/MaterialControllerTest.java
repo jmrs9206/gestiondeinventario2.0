@@ -178,7 +178,7 @@ class MaterialControllerTest {
         assertEquals(MaterialStatus.OPERATIVO, history.getNewStatus());
         assertNull(history.getPreviousOffice());
         assertEquals(testOffice1.getId(), history.getNewOffice().getId());
-        assertEquals("Initial provisioning", history.getComment());
+        assertEquals("INITIAL PROVISIONING", history.getComment());
         assertEquals(adminUser.getId(), history.getPerformedByUser().getId());
 
         // Verify audit log
@@ -377,7 +377,7 @@ class MaterialControllerTest {
         assertEquals(MaterialStatus.ROTO, history.getNewStatus());
         assertEquals(testOffice1.getId(), history.getPreviousOffice().getId());
         assertEquals(testOffice2.getId(), history.getNewOffice().getId());
-        assertEquals("Damaged during transfer", history.getComment());
+        assertEquals("DAMAGED DURING TRANSFER", history.getComment());
         assertEquals(adminUser.getId(), history.getPerformedByUser().getId());
 
         // Verify audits
@@ -462,7 +462,7 @@ class MaterialControllerTest {
         assertEquals(MaterialStatus.BAJA, history.getNewStatus());
         assertEquals(testOffice1.getId(), history.getPreviousOffice().getId());
         assertEquals(testOffice1.getId(), history.getNewOffice().getId());
-        assertEquals("Decommissioning old hardware", history.getComment());
+        assertEquals("DECOMMISSIONING OLD HARDWARE", history.getComment());
         assertEquals(tecnicoUser.getId(), history.getPerformedByUser().getId());
 
         // Verify audit

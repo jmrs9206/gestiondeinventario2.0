@@ -24,6 +24,27 @@ jwt:
 
 app:
   frontend-url: ${APP_FRONTEND_URL:http://localhost:3000}
+  branding:
+    app-name: ${BRANDING_APP_NAME:GESTION DE INVENTARIO}
+    company-name: ${BRANDING_COMPANY_NAME:Tu Empresa}
+    logo-url: ${BRANDING_LOGO_URL:}
+    logo-png-url: ${BRANDING_LOGO_PNG_URL:}
+    favicon-url: ${BRANDING_FAVICON_URL:}
+    primary-color: ${BRANDING_PRIMARY_COLOR:blue}
+    icon-preset: ${BRANDING_ICON_PRESET:shield}
+    theme:
+      mode: ${BRANDING_THEME_MODE:dark}
+      background: "${BRANDING_THEME_BACKGROUND:#1f232a}"
+      surface: "${BRANDING_THEME_SURFACE:#282d35}"
+      surface-alt: "${BRANDING_THEME_SURFACE_ALT:#303640}"
+      border: "${BRANDING_THEME_BORDER:#3b4555}"
+      text: "${BRANDING_THEME_TEXT:#f8fafc}"
+      text-muted: "${BRANDING_THEME_TEXT_MUTED:#9fb0c7}"
+      accent: "${BRANDING_THEME_ACCENT:#3b82f6}"
+      success: "${BRANDING_THEME_SUCCESS:#10b981}"
+      warning: "${BRANDING_THEME_WARNING:#f59e0b}"
+      danger: "${BRANDING_THEME_DANGER:#ef4444}"
+      info: "${BRANDING_THEME_INFO:#06b6d4}"
   security:
     cors:
       allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}

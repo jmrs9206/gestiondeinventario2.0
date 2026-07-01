@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/materials")
-@PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
+@PreAuthorize("isAuthenticated()")
 public class MaterialController {
 
     private final MaterialService materialService;
@@ -32,6 +32,7 @@ public class MaterialController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('CREATE_MATERIAL')")
     public ResponseEntity<ApiResponse<MaterialResponse>> createMaterial(
             @Valid @RequestBody MaterialRequest request,
             @AuthenticationPrincipal User performer,
@@ -57,6 +58,7 @@ public class MaterialController {
     }
 
     @PostMapping("/{publicCode}/reactivate")
+    @PreAuthorize("hasAuthority('UPDATE_MATERIAL_STATUS')")
     public ResponseEntity<ApiResponse<MaterialResponse>> reactivateMaterial(
             @PathVariable String publicCode,
             @RequestParam(required = false) String comment,
@@ -76,6 +78,7 @@ public class MaterialController {
     }
 
     @PutMapping("/{publicCode}")
+    @PreAuthorize("hasAuthority('UPDATE_MATERIAL')")
     public ResponseEntity<ApiResponse<MaterialResponse>> updateMaterial(
             @PathVariable String publicCode,
             @Valid @RequestBody MaterialRequest request,
@@ -89,6 +92,7 @@ public class MaterialController {
     }
 
     @DeleteMapping("/{publicCode}")
+    @PreAuthorize("hasAuthority('UPDATE_MATERIAL_STATUS')")
     public ResponseEntity<ApiResponse<MaterialResponse>> deleteMaterial(
             @PathVariable String publicCode,
             @RequestParam(required = false) String comment,
@@ -102,6 +106,7 @@ public class MaterialController {
     }
 
     @PostMapping("/import")
+    @PreAuthorize("hasAuthority('CREATE_MATERIAL')")
     public ResponseEntity<ApiResponse<String>> importMaterials(
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
             @AuthenticationPrincipal User performer,
@@ -114,6 +119,7 @@ public class MaterialController {
     }
 
     @GetMapping("/export")
+    @PreAuthorize("hasAuthority('READ_MATERIAL_HISTORY')")
     public ResponseEntity<byte[]> exportMaterials() {
         String csvData = materialService.exportMaterialsToCsv();
         byte[] csvBytes = csvData.getBytes(java.nio.charset.StandardCharsets.UTF_8);

@@ -1,94 +1,77 @@
 -- SQL script to seed mock data in Gestión De Inventario database
--- This populates offices, users, materials, history, and audit logs for demonstration.
+-- Normalization rule: All text data must be stored in UPPERCASE and WITHOUT ACCENTS/TILDES.
+-- Preserves exactly these five offices: MADRID, VILLALBA, MEDELLIN, SALAMANCA, LEON
 
--- Clean up existing mock data (except system admin user)
 DELETE FROM audit_log;
 DELETE FROM material_history;
+DELETE FROM refresh_tokens;
 DELETE FROM materials;
 DELETE FROM offices;
-DELETE FROM users WHERE id > 1;
+DELETE FROM users WHERE email IN ('tecnico1@tuempresa.com', 'tecnico2@tuempresa.com');
 
--- Reset auto-increment columns
 ALTER TABLE offices AUTO_INCREMENT = 1;
-ALTER TABLE users AUTO_INCREMENT = 2;
 ALTER TABLE materials AUTO_INCREMENT = 1;
 ALTER TABLE material_history AUTO_INCREMENT = 1;
 ALTER TABLE audit_log AUTO_INCREMENT = 1;
 
+INSERT INTO users (public_id, first_name, last_name, email, password_hash, role, active, must_change_password)
+SELECT
+  '3a9f0e22-83b1-4c6e-8d8a-9f5b2e3e1c6f',
+  'ADMIN',
+  'USER',
+  'admin@tuempresa.com',
+  '$2b$12$V2NjaESkrzlWSW8xtlzm6.d9M7btr.3lEKqN2zEYWq7lDxE9CC3ay',
+  'ADMIN',
+  1,
+  0
+WHERE NOT EXISTS (
+  SELECT 1 FROM users WHERE email = 'admin@tuempresa.com'
+);
+
 -- 1. Insert Offices
 INSERT INTO offices (id, public_id, name, active) VALUES
-(1, 'off_madrid_001', 'MADRID', 1),
-(2, 'off_medellin_002', 'MEDELLIN', 1),
-(3, 'off_salamanca_003', 'SALAMANCA', 1),
-(4, 'off_villalba_004', 'VILLALBA', 1),
-(5, 'off_canarias_005', 'CANARIAS', 1),
-(6, 'off_valencia_006', 'VALENCIA', 1);
+(1, 'mock-office-madrid-id', 'MADRID', 1),
+(2, 'mock-office-villalba-id', 'VILLALBA', 1),
+(3, 'mock-office-medellin-id', 'MEDELLIN', 1),
+(4, 'mock-office-salamanca-id', 'SALAMANCA', 1),
+(5, 'mock-office-leon-id', 'LEON', 1);
 
--- 2. Insert Users (Technicians and secondary Admins)
--- Password for all mock technicians/admins is "tecnico123"
+-- 2. Insert Users (Password is 'tecnico123')
 INSERT INTO users (id, public_id, first_name, last_name, email, password_hash, role, active, must_change_password) VALUES
-(2, 'usr_tecnico_001', 'Carlos', 'García', 'tecnico1@tuempresa.com', '$2b$12$S7qon/7umyt/lP6AGKDwTOoqGiwiORj391/UbVFN339andh7lqRPy', 'TECNICO', 1, 0),
-(3, 'usr_tecnico_002', 'Laura', 'Martín', 'tecnico2@tuempresa.com', '$2b$12$S7qon/7umyt/lP6AGKDwTOoqGiwiORj391/UbVFN339andh7lqRPy', 'TECNICO', 1, 0);
+(2, 'USR_TECNICO_001', 'CARLOS', 'RUIZ', 'tecnico1@tuempresa.com', '$2b$10$rqMYPhma/rGHeBzg/SQwCeZ7JUK2lH6PB.HUl5wSnC2VQvoANOnEu', 'TECNICO', 1, 0),
+(3, 'USR_TECNICO_002', 'LAURA', 'GOMEZ', 'tecnico2@tuempresa.com', '$2b$10$rqMYPhma/rGHeBzg/SQwCeZ7JUK2lH6PB.HUl5wSnC2VQvoANOnEu', 'TECNICO', 1, 0);
 
 -- 3. Insert Materials
-INSERT INTO materials (id, public_code, material_type, brand, model, serial_number, office_id, status, qr_generated_at, qr_version, active) VALUES
-(1, 'mat_mjmMqa2WSeCPqTzI9MMG', 'MONITOR', 'LG', '27UL500-W', 'SN-LG-998822', 1, 'OPERATIVO', NOW(), 1, 1),
-(2, 'mat_wh8DxEA6je2efSgsDhdk', 'AUDIFONOS', 'SONY', 'WH-1000XM4', 'SN-SONY-334455', 2, 'OPERATIVO', NOW(), 1, 1),
-(3, 'mat_pkvPBH37D2EIT02tTTtI', 'TECLADO', 'LOGITECH', 'MX KEYS', 'SN-LOGI-881133', 3, 'OPERATIVO', NOW(), 1, 1),
-(4, 'mat_nLg0Ry77oqxM0PeZwzey', 'RATON', 'LOGITECH', 'MX MASTER 3', 'SN-LOGI-556677', 4, 'OPERATIVO', NOW(), 1, 1),
-(5, 'mat_wi6tTujpaJIC5cHupjmA', 'MONITOR', 'DELL', 'U2419H', 'SN-DELL-112233', 5, 'EN_REPARACION', NOW(), 1, 1),
-(6, 'mat_ZxugYHXyUUTFc6uibtXb', 'TECLADO', 'CORSAIR', 'K70 RGB', 'SN-CORS-445566', 6, 'ROTO', NOW(), 1, 1),
-(7, 'mat_Ic7smKf93Lu6wFFrUXNA', 'RATON', 'RAZER', 'DEATHADDER', 'SN-RAZE-990011', 1, 'OPERATIVO', NOW(), 1, 1),
-(8, 'mat_9ofMM4lq8Iz0An8BOdgC', 'AUDIFONOS', 'BOSE', 'QUIETCOMFORT 45', 'SN-BOSE-445566', 2, 'BAJA', NOW(), 1, 1),
--- Madrid Office (Office 1): We need M=3, T=2, R=2, A=3 (ID 1 is MONITOR, ID 7 is RATON)
--- Adding: 2 Monitors, 2 Keyboards, 1 Mouse, 3 Headphones
-(9, 'mat_madrid_monitor_002', 'MONITOR', 'LG', '27UL500-W', 'SN-LG-998823', 1, 'OPERATIVO', NOW(), 1, 1),
-(10, 'mat_madrid_monitor_003', 'MONITOR', 'LG', '27UL500-W', 'SN-LG-998824', 1, 'OPERATIVO', NOW(), 1, 1),
-(11, 'mat_madrid_teclado_001', 'TECLADO', 'LOGITECH', 'MX KEYS', 'SN-LOGI-881134', 1, 'OPERATIVO', NOW(), 1, 1),
-(12, 'mat_madrid_teclado_002', 'TECLADO', 'LOGITECH', 'MX KEYS', 'SN-LOGI-881135', 1, 'OPERATIVO', NOW(), 1, 1),
-(13, 'mat_madrid_raton_002', 'RATON', 'LOGITECH', 'MX MASTER 3', 'SN-LOGI-556678', 1, 'OPERATIVO', NOW(), 1, 1),
-(14, 'mat_madrid_audifonos_001', 'AUDIFONOS', 'SONY', 'WH-1000XM4', 'SN-SONY-334456', 1, 'OPERATIVO', NOW(), 1, 1),
-(15, 'mat_madrid_audifonos_002', 'AUDIFONOS', 'SONY', 'WH-1000XM4', 'SN-SONY-334457', 1, 'OPERATIVO', NOW(), 1, 1),
-(16, 'mat_madrid_audifonos_003', 'AUDIFONOS', 'SONY', 'WH-1000XM4', 'SN-SONY-334458', 1, 'OPERATIVO', NOW(), 1, 1),
--- Medellin Office (Office 2): We need M=3, T=2, R=2, A=2 (ID 2 is AUDIFONOS)
--- Adding: 3 Monitors, 2 Keyboards, 2 Mice, 1 Headphone
-(17, 'mat_medellin_monitor_001', 'MONITOR', 'DELL', 'U2419H', 'SN-DELL-112234', 2, 'OPERATIVO', NOW(), 1, 1),
-(18, 'mat_medellin_monitor_002', 'MONITOR', 'DELL', 'U2419H', 'SN-DELL-112235', 2, 'OPERATIVO', NOW(), 1, 1),
-(19, 'mat_medellin_monitor_003', 'MONITOR', 'DELL', 'U2419H', 'SN-DELL-112236', 2, 'OPERATIVO', NOW(), 1, 1),
-(20, 'mat_medellin_teclado_001', 'TECLADO', 'CORSAIR', 'K70 RGB', 'SN-CORS-445567', 2, 'OPERATIVO', NOW(), 1, 1),
-(21, 'mat_medellin_teclado_002', 'TECLADO', 'CORSAIR', 'K70 RGB', 'SN-CORS-445568', 2, 'OPERATIVO', NOW(), 1, 1),
-(22, 'mat_medellin_raton_001', 'RATON', 'RAZER', 'DEATHADDER', 'SN-RAZE-990012', 2, 'OPERATIVO', NOW(), 1, 1),
-(23, 'mat_medellin_raton_002', 'RATON', 'RAZER', 'DEATHADDER', 'SN-RAZE-990013', 2, 'OPERATIVO', NOW(), 1, 1),
-(24, 'mat_medellin_audifonos_002', 'AUDIFONOS', 'SONY', 'WH-1000XM4', 'SN-SONY-334460', 2, 'OPERATIVO', NOW(), 1, 1);
+INSERT INTO materials (id, public_code, material_type, brand, model, serial_number, office_id, status, qr_version, active, created_at, updated_at) VALUES
+(1, 'FSMWL5Y7YHKX6QRP2A7ALJYN', 'MONITOR', 'DELL', 'P2419H', 'MXL2419H001', 1, 'OPERATIVO', 1, 1, NOW(), NOW()),
+(2, 'CQ2G332QXJ6174VP21PTLN9Q', 'MONITOR', 'LG', '27UK850', 'LG27UK850002', 1, 'OPERATIVO', 1, 1, NOW(), NOW()),
+(3, 'I4DK7BM3QTXM5L68KI7H2J2F', 'MONITOR', 'HP', 'ELITEDISPLAY E243', 'HP243ELITE003', 2, 'EN_REPARACION', 1, 1, NOW(), NOW()),
+(4, 'N5DSOFNKAUD1JIMUK62Z4YS1', 'TECLADO', 'LOGITECH', 'K120', 'LOGK120KEY004', 1, 'OPERATIVO', 1, 1, NOW(), NOW()),
+(5, 'WS34EGQ48G2HXJZV02KTHRZ1', 'TECLADO', 'CORSAIR', 'K55 RGB', 'CORK55RGB005', 2, 'OPERATIVO', 1, 1, NOW(), NOW()),
+(6, 'U3T10KES83B80PNBRFCADTVL', 'TECLADO', 'LOGITECH', 'MX KEYS', 'LOGMXKEYS006', 3, 'ROTO', 1, 1, NOW(), NOW()),
+(7, '4T20IIQWK9SWTBUQGGC6ZRQF', 'RATON', 'LOGITECH', 'M185', 'LOGM185MSE007', 1, 'OPERATIVO', 1, 1, NOW(), NOW()),
+(8, 'PALMAPS5612VF4NESPIY0AEC', 'RATON', 'RAZER', 'DEATHADDER ESSENTIAL', 'RZDEATHADD008', 3, 'OPERATIVO', 1, 1, NOW(), NOW()),
+(9, 'Z2EY59FHOHV9VI4VJVUBXD8T', 'AUDIFONOS', 'SENNHEISER', 'HD 206', 'SENHD206HPH009', 1, 'OPERATIVO', 1, 1, NOW(), NOW()),
+(10, 'VJOI4BPKRWMVRLD3A2SZR1M2', 'AUDIFONOS', 'SONY', 'WH-1000XM4', 'SNY1000XM4010', 2, 'OPERATIVO', 1, 1, NOW(), NOW()),
+(11, '23VX0R7VIDXD3S8W17O8Q0ZV', 'LAPTOP', 'LENOVO', 'THINKPAD T14', 'LNVT14LAP011', 1, 'OPERATIVO', 1, 1, NOW(), NOW()),
+(12, 'RQVTG9NJ8I6RI455MJJPD67G', 'LAPTOP', 'APPLE', 'MACBOOK PRO 16', 'APLMBP16LAP012', 2, 'OPERATIVO', 1, 1, NOW(), NOW()),
+(13, 'TG9TOJMIWWL5U5267JZ8Z9NR', 'LAPTOP', 'HP', 'PROBOOK 440 G8', 'HPPRO440LAP013', 3, 'BAJA', 1, 1, NOW(), NOW()),
+(14, 'U0KHHMOOAQBW4F3M17JUADV9', 'ROUTER', 'MIKROTIK', 'RB4011', 'MKRB4011014', 4, 'OPERATIVO', 1, 1, NOW(), NOW()),
+(15, 'ZQ6D2JA5S4QH4DQ45ZXC4YME', 'SWITCH', 'CISCO', 'CATALYST 2960', 'CS2960SWT015', 5, 'OPERATIVO', 1, 1, NOW(), NOW());
 
--- 4. Insert Material History (Movements)
-INSERT INTO material_history (id, material_id, action, previous_status, new_status, previous_office_id, new_office_id, comment, performed_by_user_id, created_at) VALUES
--- Monitor 001
-(1, 1, 'REGISTRO', NULL, 'OPERATIVO', NULL, 1, 'Registro inicial del monitor LG en la oficina de Madrid.', 1, '2026-05-22 09:00:00'),
--- Audifonos 001
-(2, 2, 'REGISTRO', NULL, 'OPERATIVO', NULL, 2, 'Registro inicial de audífonos Sony en Medellín.', 1, '2026-05-23 10:00:00'),
--- Teclado 001
-(3, 3, 'REGISTRO', NULL, 'OPERATIVO', NULL, 3, 'Registro inicial de teclado Logitech en Salamanca.', 2, '2026-05-24 08:45:00'),
--- Raton 001
-(4, 4, 'REGISTRO', NULL, 'OPERATIVO', NULL, 4, 'Registro inicial de ratón Logitech en Villalba.', 2, '2026-05-25 11:20:00'),
--- Monitor 002
-(5, 5, 'REGISTRO', NULL, 'OPERATIVO', NULL, 5, 'Registro inicial de monitor Dell en Canarias.', 3, '2026-05-26 15:10:00'),
-(6, 5, 'CAMBIO_ESTADO', 'OPERATIVO', 'EN_REPARACION', 5, 5, 'Falla de retroiluminación en el panel IPS.', 3, '2026-06-01 12:00:00'),
--- Teclado 002
-(7, 6, 'REGISTRO', NULL, 'OPERATIVO', NULL, 6, 'Teclado Corsair registrado en Valencia.', 2, '2026-05-27 10:05:00'),
-(8, 6, 'CAMBIO_ESTADO', 'OPERATIVO', 'ROTO', 6, 6, 'Daño físico por derrame de líquidos.', 2, '2026-06-08 14:15:00'),
--- Raton 002
-(9, 7, 'REGISTRO', NULL, 'OPERATIVO', NULL, 1, 'Ratón Razer registrado en Madrid.', 1, '2026-05-28 09:30:00'),
-(10, 8, 'REGISTRO', NULL, 'OPERATIVO', NULL, 2, 'Audífonos Bose registrados en Medellín.', 2, '2026-05-22 10:00:00'),
-(11, 8, 'BAJA', 'OPERATIVO', 'BAJA', 2, 2, 'Desgaste irreparable de almohadillas y diadema.', 1, '2026-06-12 12:00:00'),
--- Monitor 001 - completed repair cycle example (52 hours duration)
-(12, 1, 'CAMBIO_ESTADO', 'OPERATIVO', 'EN_REPARACION', 1, 1, 'Fallo en puerto HDMI, se envía a servicio técnico oficial.', 2, '2026-06-03 10:00:00'),
-(13, 1, 'CAMBIO_ESTADO', 'EN_REPARACION', 'OPERATIVO', 1, 1, 'Puerto HDMI reemplazado y testeado correctamente.', 2, '2026-06-05 14:00:00');
-
--- 5. Insert Audit Logs
-INSERT INTO audit_log (id, entity_type, entity_id, action, performed_by_type, performed_by_id, ip_address, user_agent, created_at) VALUES
-(1, 'Office', 'off_madrid_001', 'OFFICE_CREATED', 'USER', '3a9f0e22-83b1-4c6e-8d8a-9f5b2e3e1c6f', '127.0.0.1', 'Mozilla/5.0', '2026-05-22 08:30:00'),
-(2, 'Material', 'mat_mjmMqa2WSeCPqTzI9MMG', 'MATERIAL_CREATED', 'USER', '3a9f0e22-83b1-4c6e-8d8a-9f5b2e3e1c6f', '127.0.0.1', 'Mozilla/5.0', '2026-05-22 09:00:00'),
-(3, 'Material', 'mat_wi6tTujpaJIC5cHupjmA', 'MATERIAL_STATUS_CHANGED', 'USER', 'usr_tecnico_001', '127.0.0.1', 'Mozilla/5.0', '2026-06-01 12:00:00'),
-(4, 'Material', 'mat_ZxugYHXyUUTFc6uibtXb', 'MATERIAL_STATUS_CHANGED', 'USER', 'usr_tecnico_001', '127.0.0.1', 'Mozilla/5.0', '2026-06-08 14:15:00'),
-(5, 'Material', 'mat_9ofMM4lq8Iz0An8BOdgC', 'MATERIAL_DECOMMISSIONED', 'USER', '3a9f0e22-83b1-4c6e-8d8a-9f5b2e3e1c6f', '127.0.0.1', 'Mozilla/5.0', '2026-06-12 12:00:00');
+-- 4. Insert Material History
+INSERT INTO material_history (id, material_id, action, previous_status, new_status, new_office_id, comment, performed_by_user_id, created_at) VALUES
+(1, 1, 'CREACION', NULL, 'OPERATIVO', 1, 'REGISTRO INICIAL DE MONITOR CORPORATIVO', (SELECT id FROM users WHERE email = 'admin@tuempresa.com'), NOW()),
+(2, 2, 'CREACION', NULL, 'OPERATIVO', 1, 'REGISTRO INICIAL DE MONITOR DE DISENO', (SELECT id FROM users WHERE email = 'admin@tuempresa.com'), NOW()),
+(3, 3, 'CREACION', NULL, 'OPERATIVO', 2, 'REGISTRO INICIAL DE MONITOR HP', (SELECT id FROM users WHERE email = 'tecnico1@tuempresa.com'), NOW()),
+(4, 4, 'CREACION', NULL, 'OPERATIVO', 1, 'REGISTRO INICIAL DE TECLADO DE SOPORTE', (SELECT id FROM users WHERE email = 'admin@tuempresa.com'), NOW()),
+(5, 5, 'CREACION', NULL, 'OPERATIVO', 2, 'REGISTRO INICIAL DE TECLADO MECANICO', (SELECT id FROM users WHERE email = 'tecnico1@tuempresa.com'), NOW()),
+(6, 6, 'CREACION', NULL, 'OPERATIVO', 3, 'REGISTRO INICIAL DE TECLADO DE DESARROLLO', (SELECT id FROM users WHERE email = 'tecnico1@tuempresa.com'), NOW()),
+(7, 11, 'CREACION', NULL, 'OPERATIVO', 1, 'REGISTRO INICIAL DE LAPTOP CORPORATIVA', (SELECT id FROM users WHERE email = 'admin@tuempresa.com'), NOW()),
+(8, 12, 'CREACION', NULL, 'OPERATIVO', 2, 'REGISTRO INICIAL DE LAPTOP DE DESARROLLO', (SELECT id FROM users WHERE email = 'tecnico1@tuempresa.com'), NOW()),
+(9, 13, 'CREACION', NULL, 'OPERATIVO', 3, 'REGISTRO INICIAL DE LAPTOP HP', (SELECT id FROM users WHERE email = 'admin@tuempresa.com'), NOW()),
+(10, 14, 'CREACION', NULL, 'OPERATIVO', 4, 'REGISTRO INICIAL DE ROUTER PRINCIPAL', (SELECT id FROM users WHERE email = 'admin@tuempresa.com'), NOW()),
+(11, 15, 'CREACION', NULL, 'OPERATIVO', 5, 'REGISTRO INICIAL DE SWITCH DE BORDE', (SELECT id FROM users WHERE email = 'tecnico1@tuempresa.com'), NOW()),
+(12, 3, 'CAMBIO_ESTADO', 'OPERATIVO', 'EN_REPARACION', 2, 'LA PANTALLA PARPADEA CONSTANTEMENTE. ENVIADA A TALLER.', (SELECT id FROM users WHERE email = 'tecnico1@tuempresa.com'), NOW()),
+(13, 6, 'CAMBIO_ESTADO', 'OPERATIVO', 'ROTO', 3, 'SE DERRAMO CAFE SOBRE EL TECLADO. NO ENCIENDE.', (SELECT id FROM users WHERE email = 'tecnico1@tuempresa.com'), NOW()),
+(14, 13, 'CAMBIO_ESTADO', 'OPERATIVO', 'BAJA', 3, 'EQUIPO OBSOLETO Y DANADO IRREVERSIBLEMENTE.', (SELECT id FROM users WHERE email = 'admin@tuempresa.com'), NOW());

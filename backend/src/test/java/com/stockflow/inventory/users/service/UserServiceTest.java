@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,7 +60,7 @@ class UserServiceTest {
         request.setRole(Role.TECNICO);
 
         when(userRepository.findByEmail("laura@tuempresa.com")).thenReturn(Optional.empty());
-        when(passwordEncoder.encode("SecurePassword123")).thenReturn("hashed_password");
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed_password");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User saved = invocation.getArgument(0);
             return saved;
@@ -69,8 +70,8 @@ class UserServiceTest {
 
         assertNotNull(response);
         assertEquals("laura@tuempresa.com", response.getEmail());
-        assertEquals("Laura", response.getFirstName());
-        assertEquals("Gomez", response.getLastName());
+        assertEquals("LAURA", response.getFirstName());
+        assertEquals("GOMEZ", response.getLastName());
         assertEquals(Role.TECNICO, response.getRole());
         assertTrue(response.isActive());
 

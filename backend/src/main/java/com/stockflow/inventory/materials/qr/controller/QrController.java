@@ -44,7 +44,7 @@ public class QrController {
     }
 
     @PostMapping("/regenerate")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('REGENERATE_QR')")
     public ResponseEntity<ApiResponse<MaterialResponse>> regenerateQr(
             @PathVariable String publicCode,
             @AuthenticationPrincipal User performer,

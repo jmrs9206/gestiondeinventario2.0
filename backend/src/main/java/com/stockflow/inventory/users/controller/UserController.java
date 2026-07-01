@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/users")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAuthority('READ_USER')")
 public class UserController {
 
     private final UserService userService;
@@ -27,6 +27,7 @@ public class UserController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('CREATE_USER')")
     public ResponseEntity<ApiResponse<UserResponse>> createUser(
             @Valid @RequestBody UserCreateRequest request,
             @AuthenticationPrincipal User performer,
@@ -51,6 +52,7 @@ public class UserController {
     }
 
     @PutMapping("/{publicId}")
+    @PreAuthorize("hasAuthority('UPDATE_USER')")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable String publicId,
             @Valid @RequestBody UserUpdateRequest request,
@@ -64,6 +66,7 @@ public class UserController {
     }
 
     @PatchMapping("/{publicId}/status")
+    @PreAuthorize("hasAuthority('UPDATE_USER')")
     public ResponseEntity<ApiResponse<UserResponse>> changeStatus(
             @PathVariable String publicId,
             @Valid @RequestBody UserStatusRequest request,
@@ -77,6 +80,7 @@ public class UserController {
     }
 
     @PutMapping("/{publicId}/password")
+    @PreAuthorize("hasAuthority('UPDATE_USER')")
     public ResponseEntity<ApiResponse<UserResponse>> changePassword(
             @PathVariable String publicId,
             @Valid @RequestBody UserPasswordRequest request,

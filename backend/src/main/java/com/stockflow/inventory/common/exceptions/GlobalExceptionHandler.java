@@ -183,6 +183,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        log.warn("Illegal argument error: {}", ex.getMessage());
+        Map<String, Object> errorDetails = new HashMap<>();
+        errorDetails.put("code", "BAD_REQUEST");
+        errorDetails.put("message", ex.getMessage());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("error", errorDetails);
+        response.put("timestamp", getTimestamp());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public void handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
         // Rethrow to let AccessDeniedHandler handle it and audit appropriately

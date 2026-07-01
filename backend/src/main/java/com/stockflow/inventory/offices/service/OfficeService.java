@@ -38,12 +38,7 @@ public class OfficeService {
     }
 
     private String normalizeText(String input) {
-        if (input == null) {
-            return "";
-        }
-        String normalized = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFD);
-        normalized = normalized.replaceAll("\\p{M}", "");
-        return normalized.toUpperCase().trim();
+        return com.stockflow.inventory.common.utils.TextNormalizer.normalize(input);
     }
 
     @Transactional

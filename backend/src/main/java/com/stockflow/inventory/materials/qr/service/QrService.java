@@ -1,6 +1,7 @@
 package com.stockflow.inventory.materials.qr.service;
 
 import com.google.zxing.BarcodeFormat;
+import org.springframework.beans.factory.annotation.Value;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
@@ -22,6 +23,9 @@ import java.time.LocalDateTime;
 
 @Service
 public class QrService {
+
+    @Value("${app.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
 
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -57,7 +61,11 @@ public class QrService {
                 .filter(Material::isActive)
                 .orElseThrow(() -> new ResourceNotFoundException("Active material not found with public code: " + publicCode));
 
-        String qrPayload = "https://inventario.tuempresa.com/i/" + material.getPublicCode();
+        String base = frontendUrl != null ? frontendUrl : "http://localhost:3000";
+        if (!base.endsWith("/")) {
+            base += "/";
+        }
+        String qrPayload = base + "i/" + material.getPublicCode();
 
         try {
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
@@ -122,7 +130,11 @@ public class QrService {
                 .filter(Material::isActive)
                 .orElseThrow(() -> new ResourceNotFoundException("Active material not found with public code: " + publicCode));
 
-        String qrPayload = "https://inventario.tuempresa.com/i/" + material.getPublicCode();
+        String base = frontendUrl != null ? frontendUrl : "http://localhost:3000";
+        if (!base.endsWith("/")) {
+            base += "/";
+        }
+        String qrPayload = base + "i/" + material.getPublicCode();
         String qrSvg;
         try {
             QRCodeWriter qrCodeWriter = new QRCodeWriter();

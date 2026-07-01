@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/offices")
-@PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
+@PreAuthorize("isAuthenticated()")
 public class OfficeController {
 
     private final OfficeService officeService;
@@ -28,6 +28,7 @@ public class OfficeController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('CREATE_OFFICE')")
     public ResponseEntity<ApiResponse<OfficeResponse>> createOffice(
             @Valid @RequestBody OfficeRequest request,
             @AuthenticationPrincipal User performer,
@@ -48,6 +49,7 @@ public class OfficeController {
     }
 
     @PostMapping("/{publicId}/reactivate")
+    @PreAuthorize("hasAuthority('UPDATE_OFFICE')")
     public ResponseEntity<ApiResponse<OfficeResponse>> reactivateOffice(
             @PathVariable String publicId,
             @AuthenticationPrincipal User performer,
@@ -66,6 +68,7 @@ public class OfficeController {
     }
 
     @PutMapping("/{publicId}")
+    @PreAuthorize("hasAuthority('UPDATE_OFFICE')")
     public ResponseEntity<ApiResponse<OfficeResponse>> updateOffice(
             @PathVariable String publicId,
             @Valid @RequestBody OfficeRequest request,
@@ -79,6 +82,7 @@ public class OfficeController {
     }
 
     @DeleteMapping("/{publicId}")
+    @PreAuthorize("hasAuthority('UPDATE_OFFICE')")
     public ResponseEntity<ApiResponse<OfficeResponse>> deleteOffice(
             @PathVariable String publicId,
             @AuthenticationPrincipal User performer,

@@ -30,7 +30,7 @@ public class UserUpdateRequest {
     }
 
     public void setFirstName(String firstName) {
-        this.firstName = firstName;
+        this.firstName = com.stockflow.inventory.common.utils.TextNormalizer.normalize(firstName);
     }
 
     public String getLastName() {
@@ -38,7 +38,7 @@ public class UserUpdateRequest {
     }
 
     public void setLastName(String lastName) {
-        this.lastName = lastName;
+        this.lastName = com.stockflow.inventory.common.utils.TextNormalizer.normalize(lastName);
     }
 
     public String getEmail() {
@@ -46,7 +46,7 @@ public class UserUpdateRequest {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = email != null ? com.stockflow.inventory.common.utils.TextNormalizer.normalize(email).toLowerCase() : null;
     }
 
     public Role getRole() {

@@ -35,7 +35,7 @@ public class MaterialRequest {
     }
 
     public void setMaterialType(String materialType) {
-        this.materialType = materialType;
+        this.materialType = com.stockflow.inventory.common.utils.TextNormalizer.normalize(materialType);
     }
 
     public String getBrand() {
@@ -43,7 +43,7 @@ public class MaterialRequest {
     }
 
     public void setBrand(String brand) {
-        this.brand = brand;
+        this.brand = com.stockflow.inventory.common.utils.TextNormalizer.normalize(brand);
     }
 
     public String getModel() {
@@ -51,7 +51,7 @@ public class MaterialRequest {
     }
 
     public void setModel(String model) {
-        this.model = model;
+        this.model = com.stockflow.inventory.common.utils.TextNormalizer.normalize(model);
     }
 
     public String getSerialNumber() {
@@ -59,7 +59,7 @@ public class MaterialRequest {
     }
 
     public void setSerialNumber(String serialNumber) {
-        this.serialNumber = serialNumber;
+        this.serialNumber = com.stockflow.inventory.common.utils.TextNormalizer.normalize(serialNumber);
     }
 
     public String getOfficePublicId() {
@@ -83,6 +83,6 @@ public class MaterialRequest {
     }
 
     public void setComment(String comment) {
-        this.comment = comment;
+        this.comment = com.stockflow.inventory.common.utils.TextNormalizer.normalize(comment);
     }
 }

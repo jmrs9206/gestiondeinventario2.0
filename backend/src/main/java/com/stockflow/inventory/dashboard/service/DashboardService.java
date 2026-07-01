@@ -188,6 +188,14 @@ public class DashboardService {
             totalPartial += partial;
         }
 
+        Map<String, Long> materialTypeCounts = new LinkedHashMap<>();
+        for (Material m : allMaterials) {
+            if (m.isActive()) {
+                String type = m.getMaterialType() != null ? m.getMaterialType().trim().toUpperCase() : "OTRO";
+                materialTypeCounts.put(type, materialTypeCounts.getOrDefault(type, 0L) + 1);
+            }
+        }
+
         return new DashboardKpisResponse(
                 totalMaterials,
                 statusCounts,
@@ -200,7 +208,8 @@ public class DashboardService {
                 leftoverMonitors,
                 leftoverKeyboards,
                 leftoverMice,
-                leftoverHeadphones
+                leftoverHeadphones,
+                materialTypeCounts
         );
     }
 }

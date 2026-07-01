@@ -19,7 +19,6 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   if (response.status === 401 || response.status === 403) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }

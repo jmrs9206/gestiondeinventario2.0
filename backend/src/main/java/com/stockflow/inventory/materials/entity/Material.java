@@ -72,7 +72,7 @@ public class Material extends BaseEntity {
     }
 
     public void setPublicCode(String publicCode) {
-        this.publicCode = publicCode;
+        this.publicCode = com.stockflow.inventory.common.utils.TextNormalizer.normalize(publicCode);
     }
 
     public String getMaterialType() {
@@ -80,7 +80,7 @@ public class Material extends BaseEntity {
     }
 
     public void setMaterialType(String materialType) {
-        this.materialType = materialType;
+        this.materialType = com.stockflow.inventory.common.utils.TextNormalizer.normalize(materialType);
     }
 
     public String getBrand() {
@@ -88,7 +88,7 @@ public class Material extends BaseEntity {
     }
 
     public void setBrand(String brand) {
-        this.brand = brand;
+        this.brand = com.stockflow.inventory.common.utils.TextNormalizer.normalize(brand);
     }
 
     public String getModel() {
@@ -96,7 +96,7 @@ public class Material extends BaseEntity {
     }
 
     public void setModel(String model) {
-        this.model = model;
+        this.model = com.stockflow.inventory.common.utils.TextNormalizer.normalize(model);
     }
 
     public String getSerialNumber() {
@@ -104,7 +104,7 @@ public class Material extends BaseEntity {
     }
 
     public void setSerialNumber(String serialNumber) {
-        this.serialNumber = serialNumber;
+        this.serialNumber = com.stockflow.inventory.common.utils.TextNormalizer.normalize(serialNumber);
     }
 
     public Office getOffice() {
@@ -138,4 +138,5 @@ public class Material extends BaseEntity {
     public void setQrVersion(Integer qrVersion) {
         this.qrVersion = qrVersion;
     }
+
 }

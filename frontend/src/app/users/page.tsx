@@ -7,7 +7,7 @@ import UsersTable from '@/modules/materials/components/UsersTable';
 
 export default function UsersPage() {
   return (
-    <ProtectedRoute allowedRoles={['ADMIN']}>
+    <ProtectedRoute requiredPermission="READ_USER">
       <Navigation>
         <UsersTable />
       </Navigation>

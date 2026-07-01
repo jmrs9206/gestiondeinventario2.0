@@ -28,6 +28,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -65,7 +66,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/health").permitAll()
-                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
+                .requestMatchers("/api/v1/branding").permitAll()
+                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout", "/api/v1/auth/accept-invitation").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             )
@@ -85,13 +87,54 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(UserRepository userRepository) {
+    public UserDetailsService userDetailsService(
+            UserRepository userRepository,
+            com.stockflow.inventory.users.repository.RolePermissionRepository rolePermissionRepository
+    ) {
         return email -> {
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
             if (!user.isAccountNonLocked()) {
                 throw new org.springframework.security.authentication.LockedException("La cuenta está bloqueada temporalmente.");
             }
+            
+            // Load permissions dynamically from DB
+            List<com.stockflow.inventory.users.entity.RolePermission> rolePerms = rolePermissionRepository.findByRole(user.getRole().name());
+            List<org.springframework.security.core.GrantedAuthority> authorities = new java.util.ArrayList<>();
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+            
+            if (rolePermissionRepository.count() == 0) {
+                // Fallback for tests when DB is not seeded
+                if (user.getRole() == com.stockflow.inventory.users.entity.Role.ADMIN) {
+                    authorities.add(new SimpleGrantedAuthority("CREATE_USER"));
+                    authorities.add(new SimpleGrantedAuthority("READ_USER"));
+                    authorities.add(new SimpleGrantedAuthority("UPDATE_USER"));
+                    authorities.add(new SimpleGrantedAuthority("CREATE_OFFICE"));
+                    authorities.add(new SimpleGrantedAuthority("UPDATE_OFFICE"));
+                    authorities.add(new SimpleGrantedAuthority("CREATE_MATERIAL"));
+                    authorities.add(new SimpleGrantedAuthority("UPDATE_MATERIAL"));
+                    authorities.add(new SimpleGrantedAuthority("UPDATE_MATERIAL_STATUS"));
+                    authorities.add(new SimpleGrantedAuthority("READ_DASHBOARD"));
+                    authorities.add(new SimpleGrantedAuthority("READ_AUDIT_LOG"));
+                    authorities.add(new SimpleGrantedAuthority("READ_MATERIAL_HISTORY"));
+                    authorities.add(new SimpleGrantedAuthority("MANAGE_API_CLIENTS"));
+                    authorities.add(new SimpleGrantedAuthority("REGENERATE_QR"));
+                    authorities.add(new SimpleGrantedAuthority("MANAGE_ROLES"));
+                } else if (user.getRole() == com.stockflow.inventory.users.entity.Role.TECNICO) {
+                    authorities.add(new SimpleGrantedAuthority("CREATE_OFFICE"));
+                    authorities.add(new SimpleGrantedAuthority("UPDATE_OFFICE"));
+                    authorities.add(new SimpleGrantedAuthority("CREATE_MATERIAL"));
+                    authorities.add(new SimpleGrantedAuthority("UPDATE_MATERIAL"));
+                    authorities.add(new SimpleGrantedAuthority("UPDATE_MATERIAL_STATUS"));
+                    authorities.add(new SimpleGrantedAuthority("READ_MATERIAL_HISTORY"));
+                }
+            } else {
+                for (com.stockflow.inventory.users.entity.RolePermission rp : rolePerms) {
+                    authorities.add(new SimpleGrantedAuthority(rp.getPermission()));
+                }
+            }
+            user.setAuthorities(authorities);
+            
             return user;
         };
     }

@@ -58,9 +58,19 @@ public class User extends BaseEntity implements UserDetails {
         this.role = role;
     }
 
+    @Transient
+    private Collection<GrantedAuthority> authorities;
+
+    public void setAuthorities(Collection<GrantedAuthority> authorities) {
+        this.authorities = authorities;
+    }
+
     // UserDetails interface methods
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (authorities != null) {
+            return authorities;
+        }
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
@@ -119,7 +129,7 @@ public class User extends BaseEntity implements UserDetails {
     }
 
     public void setFirstName(String firstName) {
-        this.firstName = firstName;
+        this.firstName = com.stockflow.inventory.common.utils.TextNormalizer.normalize(firstName);
     }
 
     public String getLastName() {
@@ -127,7 +137,7 @@ public class User extends BaseEntity implements UserDetails {
     }
 
     public void setLastName(String lastName) {
-        this.lastName = lastName;
+        this.lastName = com.stockflow.inventory.common.utils.TextNormalizer.normalize(lastName);
     }
 
     public String getEmail() {
@@ -135,7 +145,7 @@ public class User extends BaseEntity implements UserDetails {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = email != null ? com.stockflow.inventory.common.utils.TextNormalizer.normalize(email).toLowerCase() : null;
     }
 
     public String getPasswordHash() {
@@ -177,4 +187,27 @@ public class User extends BaseEntity implements UserDetails {
     public void setLockoutUntil(java.time.LocalDateTime lockoutUntil) {
         this.lockoutUntil = lockoutUntil;
     }
+
+    @Column(name = "invitation_token")
+    private String invitationToken;
+
+    @Column(name = "invitation_token_expiry")
+    private java.time.LocalDateTime invitationTokenExpiry;
+
+    public String getInvitationToken() {
+        return invitationToken;
+    }
+
+    public void setInvitationToken(String invitationToken) {
+        this.invitationToken = invitationToken;
+    }
+
+    public java.time.LocalDateTime getInvitationTokenExpiry() {
+        return invitationTokenExpiry;
+    }
+
+    public void setInvitationTokenExpiry(java.time.LocalDateTime invitationTokenExpiry) {
+        this.invitationTokenExpiry = invitationTokenExpiry;
+    }
+
 }

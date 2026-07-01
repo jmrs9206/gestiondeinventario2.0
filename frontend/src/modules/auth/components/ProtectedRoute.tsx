@@ -8,9 +8,10 @@ import { ShieldAlert } from 'lucide-react';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: string[];
+  requiredPermission?: string;
 }
 
-export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
+export default function ProtectedRoute({ children, allowedRoles, requiredPermission }: ProtectedRouteProps) {
   const { user, isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
@@ -36,7 +37,10 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     return null;
   }
 
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+  const hasRole = !allowedRoles || (user && allowedRoles.includes(user.role));
+  const hasPermission = !requiredPermission || (user && user.permissions && user.permissions.includes(requiredPermission));
+
+  if (!hasRole || !hasPermission) {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-8 text-center">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-950/20 text-rose-600 border border-rose-200 dark:border-rose-950/50">

@@ -19,6 +19,7 @@ export interface DashboardKpis {
   leftoverKeyboards: number;
   leftoverMice: number;
   leftoverHeadphones: number;
+  materialTypeCounts: Record<string, number>;
 }
 
 export interface MaterialHistoryResponse {

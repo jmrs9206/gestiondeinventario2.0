@@ -1,17 +1,23 @@
-# Inventory Management System
+# Gestión De Inventario - StockFlow
 
-Sistema profesional e integral para la gestión y trazabilidad de inventario (periféricos, dispositivos de red y mobiliario) de StockFlow.
+Sistema profesional e integral para la gestión, control y trazabilidad de inventario corporativo (periféricos, dispositivos de red, workstations y mobiliario) de StockFlow.
+
+**Autor:** JMRS
 
 ---
 
 ## 🚀 Características Principales
 
-- **Gestión de Inventario (CRUD):** Control de materiales, oficinas y estados controlados de equipos (`OPERATIVO`, `ROTO`, `EN_REPARACION`, `BAJA`).
-- **Seguridad Robusta:** Autenticación por JWT, Refresh Token en cookie segura (httpOnly), encriptación BCrypt y autorización basada en roles (`ADMIN` / `TECNICO`).
-- **Integración Externa:** API Pública asegurada mediante API Keys restrictivas y control de scopes (`READ_MATERIALS`, `WRITE_USERS`).
-- **Trazabilidad Absoluta:** Historial detallado de movimientos de materiales con justificaciones y registro de auditoría global del sistema.
-- **Códigos QR Inteligentes:** Identificación física mediante `public_code` alfanumérico seguro y no secuencial de 8 caracteres, con renderizado de imagen QR dinámica.
-- **Arquitectura de Alta Calidad:** Backend monolítico modular en Spring Boot 3 y Frontend interactivo moderno en Next.js (App Router) estilizado con CSS personalizado premium.
+- **Gestión de Inventario (CRUD):** Control centralizado de materiales, oficinas y estados físicos de equipos (`OPERATIVO`, `ROTO`, `EN_REPARACION`, `BAJA`).
+- **Normalización de Datos Estricta:** Motor de normalización backend que asegura que toda la información ingresada (nombres, marcas, modelos, números de serie y comentarios) se almacene automáticamente en **mayúsculas y libre de acentos o tildes** para homogeneidad e integridad en búsquedas.
+- **Seguridad Robusta:** Autenticación por JWT, Refresh Token en cookie segura (httpOnly), encriptación BCrypt y autorización estricta basada en roles (`ADMIN` / `TECNICO`).
+- **Integración Externa:** API Pública asegurada mediante API Keys restrictivas y control de ámbitos de acceso (`READ_MATERIALS`, `WRITE_USERS`).
+- **Trazabilidad Absoluta:** Historial de movimientos de materiales con comentarios descriptivos obligatorios y registro de auditoría global del sistema.
+- **Identificación Física y QR Dinámico:**
+  - Generación de códigos QR mediante `public_code` alfanumérico seguro y no secuencial.
+  - Enlaces de QR configurables dinámicamente según el entorno (`APP_FRONTEND_URL`) eliminando dominios fijos en el código.
+- **Branding Centralizado desde Backend**: La identidad visual (logotipo, favicon, paleta de colores, nombre del sistema y empresa) se administra estrictamente desde las propiedades del servidor. La sección de configuración en el frontend funciona en modo lectura exclusiva.
+- **Diseño Visual Premium**: Interfaz moderna basada en un sistema de diseño monochrome ("plomo/zinc") con bordes satinados, microanimaciones reactivas, charts dinámicos y adaptabilidad móvil nativa.
 
 ---
 
@@ -19,23 +25,23 @@ Sistema profesional e integral para la gestión y trazabilidad de inventario (pe
 
 ```text
 gestionDeInventario2.0/
-├── backend/                    # Código fuente del Backend (Spring Boot 3)
-│   ├── src/                    # Lógica de negocio (modular) y controladores REST
-│   ├── pom.xml                 # Definición de dependencias Maven
-│   └── Dockerfile              # Configuración de compilación en dos etapas de la imagen backend
-├── frontend/                   # Código fuente del Frontend (Next.js 16)
-│   ├── src/                    # Componentes UI, páginas, hooks y estilos CSS
-│   ├── package.json            # Scripts npm y dependencias frontend
-│   ├── vitest.config.ts        # Configuración de Vitest para pruebas
-│   └── Dockerfile              # Configuración de empaquetado Docker
-├── docs/                       # Documentación técnica, ADRs e histórico de progreso
-│   ├── 00-project/             # AI Runbook, Master Rules, Roadmap de fases
-│   ├── 01-architecture/        # Registro de Decisiones de Arquitectura (ADR)
-│   ├── 02-technical-structure/ # Guía de despliegue, BD, seguridad y QR
+├── backend/                    # Lógica de negocio (Spring Boot 3) y servicios API
+│   ├── src/                    # Controladores, servicios, entidades JPA y utilidades
+│   ├── pom.xml                 # Dependencias Maven y configuración del build
+│   └── Dockerfile              # Construcción optimizada en dos fases de la imagen de producción
+├── frontend/                   # Interfaz interactiva de usuario (Next.js 16 - App Router)
+│   ├── src/                    # Componentes UI (React), páginas, hooks de estado y estilos CSS
+│   ├── package.json            # Scripts de ejecución y dependencias npm
+│   ├── vitest.config.ts        # Configuración del entorno de pruebas unitarias
+│   └── Dockerfile              # Empaquetado optimizado del cliente
+├── docs/                       # Documentación técnica, ADRs y especificaciones
+│   ├── 00-project/             # AI Runbook, Master Rules y Roadmap
+│   ├── 01-architecture/        # Decisiones de Arquitectura (ADR)
+│   ├── 02-technical-structure/ # Guías de base de datos, seguridad, despliegue y QR
 │   ├── 05-api/                 # Contrato e interfaz API (openapi.yaml)
-│   └── nginx/                  # Configuración de proxy inverso de producción y SSL
-├── docker-compose.yml          # Orquestación de desarrollo local (Backend + Frontend + MySQL)
-├── docker-compose.prod.yml     # Orquestación de producción (Nginx SSL + Backend + Frontend + MySQL)
+│   └── nginx/                  # Proxy inverso y certificados SSL para producción
+├── docker-compose.yml          # Orquestación de desarrollo local (Base de datos expuesta)
+├── docker-compose.prod.yml     # Orquestación endurecida de producción con SSL Nginx
 ├── .env.example                # Plantilla de variables de entorno configurables
 └── README.md                   # Este archivo
 ```
@@ -45,76 +51,79 @@ gestionDeInventario2.0/
 ## 🛠️ Requisitos del Sistema
 
 - **Java Development Kit (JDK) 21**
-- **Node.js v20.x o superior** (junto con npm)
+- **Node.js v20.x o superior** (y gestor de paquetes npm)
 - **Maven v3.8+**
 - **Docker y Docker Compose v2.0+**
 
 ---
 
-## 💻 Inicio Rápido Local (Sin Docker)
+## 💻 Inicio Rápido Local (Desarrollo)
 
-### 1. Configuración de Entorno
-Copia el archivo de plantilla y rellena tus secrets y credenciales de base de datos:
+### 1. Configuración de Variables
+Copia la plantilla de variables de entorno y define tus credenciales:
 ```bash
 cp .env.example .env
 ```
 
-### 2. Configuración y Ejecución del Backend
-1. Asegúrate de tener una base de datos MySQL local llamada igual que la variable `DB_NAME` en tu `.env`.
-2. Compila y ejecuta el backend:
+### 2. Ejecutar el Backend (Spring Boot)
+1. Asegúrate de tener una base de datos MySQL local configurada con los accesos definidos en tu archivo `.env`.
+2. Ejecuta el backend:
    ```bash
    cd backend
    mvn clean spring-boot:run
    ```
-   *El backend iniciará en http://localhost:8080. Flyway aplicará automáticamente las migraciones en la base de datos.*
+   *El servidor de backend levantará en http://localhost:8080. Las migraciones de base de datos se aplicarán automáticamente a través de Flyway.*
 
-### 3. Configuración y Ejecución del Frontend
-1. Instala las dependencias necesarias:
+### 3. Ejecutar el Frontend (Next.js)
+1. Instala los paquetes requeridos:
    ```bash
    cd frontend
    npm install
    ```
-2. Ejecuta el servidor de desarrollo:
+2. Inicia el servidor local de desarrollo:
    ```bash
    npm run dev
    ```
-   *El frontend iniciará en http://localhost:3000.*
+   *La aplicación estará accesible en http://localhost:3000.*
 
 ---
 
 ## 🐳 Despliegue con Docker
 
 ### Modo Desarrollo (Local)
-Para levantar todo el entorno (Base de datos expuesta en el puerto `3306`, Backend en `8080` y Frontend en `3000`):
+Para iniciar la infraestructura de desarrollo local completa (MySQL expuesto en `3306`, Backend en `8080`, Frontend en `3001` mapeado internamente al puerto `3000`):
 ```bash
-docker compose up --build -d
+docker-compose down && docker-compose up --build -d
 ```
 
 ### Modo Producción (Seguro)
-Levanta la infraestructura endurecida con aislamiento de puertos de base de datos, límites de consumo de recursos de contenedores, rotación de logs dockerizada, y el servidor Nginx reverse proxy gestionando la redirección de puertos y SSL:
-1. Genera certificados SSL de pruebas/desarrollo:
+Levanta la infraestructura endurecida, con aislamiento de puertos, límites de consumo de memoria, rotación de logs dockerizada, y el servidor Nginx proxy inverso gestionando la redirección de puertos y SSL:
+1. Genera certificados de seguridad autofirmados para el entorno:
    ```bash
    ./docs/nginx/generate-certs.sh
    ```
-2. Levanta la infraestructura de producción:
+2. Inicia los servicios de producción:
    ```bash
-   docker compose -f docker-compose.prod.yml up --build -d
+   docker-compose -f docker-compose.prod.yml down && docker-compose -f docker-compose.prod.yml up --build -d
    ```
-   *El sistema estará disponible de forma segura a través de HTTPS en https://localhost o el dominio asignado (e.g. https://inventario.tuempresa.com).*
 
 ---
 
 ## 🧪 Ejecución de Pruebas (Test Suites)
 
-### Backend (Pruebas Unitarias, Integración y Contenedores)
-El backend ejecuta pruebas unitarias (Mockito) y de integración real de base de datos mediante contenedores desechables MySQL con Testcontainers:
+### Pruebas del Backend (JUnit / Testcontainers)
+El backend ejecuta pruebas unitarias de lógica y pruebas de integración reales de base de datos levantando contenedores desechables MySQL mediante Testcontainers:
 ```bash
 cd backend
 mvn clean verify
 ```
+*Para pruebas locales rápidas sin base de datos Docker Ryuk activa:*
+```bash
+mvn test -Dtest=!DatabaseMigrationIntegrationTest
+```
 
-### Frontend (Pruebas Unitarias y de Componentes UI)
-El frontend ejecuta pruebas unitarias y de montaje de interfaz de usuario con Vitest y React Testing Library:
+### Pruebas del Frontend (Vitest / React Testing Library)
+El frontend contiene cobertura de tests de componentes y hooks:
 ```bash
 cd frontend
 npm run test
@@ -124,33 +133,29 @@ npm run test
 
 ## 📱 Flujo de Trazabilidad QR
 
-1. **Generación:** Al crear un material, el sistema calcula un `public_code` criptográficamente seguro (ej: `mat_f8c2e9b1`) y genera un código QR que apunta a `/i/mat_f8c2e9b1`.
-2. **Escaneo:** Al escanear físicamente la etiqueta QR, el usuario es redirigido a la vista optimizada para dispositivos móviles en `/i/[publicCode]`.
-3. **Acciones Rápidas:**
-   - Si no está autenticado, la UI captura el destino y redirige al flujo de login para asegurar la sesión.
-   - El personal autorizado (`ADMIN` o `TECNICO`) puede realizar traslados de oficina o reportar estados físicos directamente en la pantalla móvil.
-   - Si el equipo se reporta como `BAJA`, la interfaz solicita de manera obligatoria la justificación del desecho, registrando la baja en el histórico de movimientos.
+1. **Creación:** Cuando un usuario registra un material, el sistema calcula un `public_code` no predecible (ej: `MAT_MONITOR_6A24AFC8`) y genera un código QR cuya URL apunta a `[APP_FRONTEND_URL]/i/[publicCode]`.
+2. **Escaneo:** Al escanear físicamente el código QR con un dispositivo móvil, el usuario abre la vista optimizada de detalles.
+3. **Acción de Operaciones**:
+   * Si no está autenticado, la UI almacena la ubicación y le redirige a la pantalla de Login para proteger los accesos.
+   * El personal técnico autorizado (`ADMIN` o `TECNICO`) puede actualizar de inmediato la ubicación física (oficina) o reportar incidencias.
+   * Si un equipo se declara de `BAJA`, el sistema obliga a describir detalladamente la justificación de desecho para conservar el registro histórico de trazabilidad.
 
 ---
 
 ## 🔍 Resolución de Problemas (Troubleshooting)
 
 ### 1. Error de Conexión de Base de Datos
-- **Problema:** El backend falla al iniciar debido a un error `Connection refused`.
-- **Solución:** Verifica que el servicio MySQL local esté corriendo, o que las credenciales e IP de base de datos definidas en el archivo `.env` coincidan exactamente con la base de datos MySQL activa. Si usas Docker Compose, comprueba que el contenedor `vd_mysql_db` esté saludable (`docker ps`).
+- **Problema:** El backend falla indicando `Connection refused` al arrancar.
+- **Solución:** Verifica que el servicio de MySQL local esté activo o que las credenciales del archivo `.env` coincidan. Si usas Docker Compose, comprueba que el contenedor `vd_mysql_db` esté en estado saludable (`docker ps`).
 
-### 2. Acceso Denegado por Docker / Socket Permission
-- **Problema:** Las pruebas de Testcontainers en el backend fallan indicando `Can't connect to local MySQL/Docker daemon`.
-- **Solución:** Verifica que el demonio de Docker esté activo en tu máquina de desarrollo. Si estás en Linux, asegúrate de que tu usuario tenga los permisos necesarios y pertenezca al grupo `docker`:
+### 2. Acceso Denegado por Docker / Permisos de Socket
+- **Problema:** Las pruebas de Testcontainers en el backend fallan indicando problemas de conexión con el docker daemon.
+- **Solución:** Asegúrate de que Docker esté iniciado. En entornos Linux, comprueba que tu usuario pertenezca al grupo `docker`:
   ```bash
   sudo usermod -aG docker $USER
   newgrp docker
   ```
 
-### 3. Error en Next.js por "searchParams"
-- **Problema:** Fallo de static rendering durante `npm run build` en el frontend relacionado con páginas dinámicas que consumen parámetros de búsqueda.
-- **Solución:** Asegúrate de que todos los componentes que leen parámetros del cliente (`searchParams`) estén envueltos en componentes de carga asíncrona `<Suspense>` para evitar advertencias de pre-renderizado estático.
-
-### 4. Nginx falla al arrancar por certificados
+### 3. Nginx falla al arrancar por certificados SSL
 - **Problema:** En el despliegue de producción, el contenedor de Nginx se detiene por la falta de certificados SSL.
-- **Solución:** Asegúrate de ejecutar `./docs/nginx/generate-certs.sh` antes de levantar `docker-compose.prod.yml`, o asegúrate de que los archivos `fullchain.pem` y `privkey.pem` estén mapeados correctamente en el directorio `/etc/nginx/certs` dentro del contenedor.
+- **Solución:** Asegúrate de ejecutar `./docs/nginx/generate-certs.sh` antes de levantar `docker-compose.prod.yml`.

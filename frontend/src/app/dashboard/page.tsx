@@ -16,8 +16,10 @@ import RecentMovementsTable from '../../modules/dashboard/components/RecentMovem
 import DashboardFilters from '../../modules/dashboard/components/DashboardFilters';
 import ProtectedRoute from '@/modules/auth/components/ProtectedRoute';
 import Navigation from '@/modules/materials/components/Navigation';
+import { useBranding } from '@/modules/branding/hooks/useBranding';
 
 function DashboardPageContent() {
+  const { branding } = useBranding();
   const [kpis, setKpis] = useState<DashboardKpis | null>(null);
   const [movements, setMovements] = useState<MaterialHistoryResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -153,15 +155,6 @@ function DashboardPageContent() {
               <RotateCw className="h-4 w-4" />
               Reintentar
             </button>
-            <button
-              onClick={() => {
-                localStorage.setItem('accessToken', 'mock_admin_token'); // Setup token for local developer mode
-                loadData();
-              }}
-              className="mt-2 text-xs text-blue-600 hover:text-blue-500 font-medium hover:underline"
-            >
-              Configurar token de prueba
-            </button>
           </div>
         </div>
       </div>
@@ -179,7 +172,7 @@ function DashboardPageContent() {
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
               <Shield className="h-8 w-8 text-blue-600" />
-              Gestión De Inventario
+              {branding.appName}
               <span className="text-slate-700 dark:text-zinc-200 font-light text-2xl">|</span>
               <span className="font-semibold text-slate-700 dark:text-zinc-200">Dashboard</span>
             </h1>
@@ -341,6 +334,38 @@ function DashboardPageContent() {
               </div>
             )}
 
+            {/* Resumen por Tipo de Material */}
+            {kpis && kpis.materialTypeCounts && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-2">
+                  <h2 className="text-xl font-bold text-slate-800 dark:text-zinc-100 flex items-center gap-2">
+                    <Package className="h-5 w-5 text-zinc-500" />
+                    Resumen de Inventario por Tipo de Material
+                  </h2>
+                  <span className="text-xs text-slate-500 dark:text-zinc-400">
+                    Cantidad total de equipos activos agrupados por categoría
+                  </span>
+                </div>
+                
+                <div className="grid gap-4 grid-cols-2 sm:grid-cols-4 lg:grid-cols-6">
+                  {Object.entries(kpis.materialTypeCounts).map(([type, count]) => (
+                    <div 
+                      key={type} 
+                      className="relative overflow-hidden rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700/80 p-4 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-md hover:border-slate-300 dark:hover:border-zinc-600"
+                    >
+                      <p className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">{type}</p>
+                      <h4 className="mt-1 text-2xl font-extrabold text-slate-800 dark:text-zinc-100 tracking-tight">
+                        {count}
+                      </h4>
+                      <div className="absolute right-3 bottom-3 opacity-10">
+                        <Package className="h-8 w-8 text-slate-900 dark:text-white" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Filters */}
             <DashboardFilters
               selectedOffice={selectedOffice}
@@ -369,7 +394,7 @@ function DashboardPageContent() {
 
 export default function DashboardPage() {
   return (
-    <ProtectedRoute allowedRoles={['ADMIN']}>
+    <ProtectedRoute requiredPermission="READ_DASHBOARD">
       <Navigation>
         <DashboardPageContent />
       </Navigation>

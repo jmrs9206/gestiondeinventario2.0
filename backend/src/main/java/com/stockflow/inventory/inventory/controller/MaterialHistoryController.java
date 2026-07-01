@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/inventory")
-@PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
+@PreAuthorize("hasAuthority('READ_MATERIAL_HISTORY')")
 public class MaterialHistoryController {
 
     private final MaterialHistoryService materialHistoryService;

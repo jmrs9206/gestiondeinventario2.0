@@ -217,7 +217,7 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.firstName").value("UpdatedFirstName"))
+                .andExpect(jsonPath("$.data.firstName").value("UPDATEDFIRSTNAME"))
                 .andExpect(jsonPath("$.data.email").value("tecnico.updated@tuempresa.com"))
                 .andExpect(jsonPath("$.data.role").value("ADMIN"));
 

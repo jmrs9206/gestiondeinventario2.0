@@ -14,6 +14,7 @@ import {
   MaterialRequest
 } from '../services/material.service';
 import { fetchOffices, OfficeResponse } from '../services/office.service';
+import { extractPublicCodeFromQrPayload } from '../utils/qr';
 import {
   Plus,
   Search,
@@ -30,8 +31,10 @@ import {
   Download,
   Upload
 } from 'lucide-react';
+import { useBranding } from '@/modules/branding/hooks/useBranding';
 
 export default function MaterialsTable() {
+  const { branding } = useBranding();
   const [materials, setMaterials] = useState<MaterialResponse[]>([]);
   const [offices, setOffices] = useState<OfficeResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -398,6 +401,17 @@ export default function MaterialsTable() {
     setShowScannerModal(true);
   };
 
+  const stopScanner = useCallback(async () => {
+    if (qrScannerRef.current) {
+      try {
+        await qrScannerRef.current.stop();
+      } catch {
+        // ignore
+      }
+      qrScannerRef.current = null;
+    }
+  }, []);
+
   const startScanner = useCallback(async () => {
     setScannerError(null);
     try {
@@ -411,19 +425,14 @@ export default function MaterialsTable() {
           qrbox: { width: 250, height: 250 },
         },
         (decodedText) => {
-          let code = decodedText.trim();
-          if (code.includes('/materials/')) {
-            code = code.split('/materials/')[1].split('?')[0].split('#')[0];
-          } else if (code.includes('/i/')) {
-            code = code.split('/i/')[1].split('?')[0].split('#')[0];
-          }
-          
-          if (code.startsWith('mat_')) {
+          const publicCode = extractPublicCodeFromQrPayload(decodedText);
+
+          if (publicCode) {
             stopScanner();
             setShowScannerModal(false);
-            window.location.href = `/materials/${code}`;
+            window.location.href = `/materials/${publicCode}`;
           } else {
-            setScannerError(`Código QR no reconocido: "${decodedText}". Debe contener un código que empiece con 'mat_'.`);
+            setScannerError(`Código QR no reconocido. Debe ser una etiqueta de activo válida de este inventario.`);
           }
         },
         () => {
@@ -433,18 +442,7 @@ export default function MaterialsTable() {
     } catch (err: any) {
       setScannerError(`Error al iniciar la cámara: ${err.message || err}`);
     }
-  }, []);
-
-  const stopScanner = useCallback(async () => {
-    if (qrScannerRef.current) {
-      try {
-        await qrScannerRef.current.stop();
-      } catch {
-        // ignore
-      }
-      qrScannerRef.current = null;
-    }
-  }, []);
+  }, [stopScanner]);
 
   useEffect(() => {
     if (showScannerModal) {
@@ -463,15 +461,15 @@ export default function MaterialsTable() {
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'OPERATIVO':
-        return 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-950/50';
+        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
       case 'EN_REPARACION':
-        return 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border border-amber-250';
+        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
       case 'ROTO':
-        return 'bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-950/50';
+        return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20';
       case 'BAJA':
-        return 'bg-slate-100 dark:bg-zinc-800/40 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700/50';
+        return 'bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 border border-zinc-500/25';
       default:
-        return 'bg-slate-100 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700';
+        return 'bg-zinc-500/5 text-zinc-650 dark:text-zinc-350 border border-zinc-500/10';
     }
   };
 
@@ -495,42 +493,42 @@ export default function MaterialsTable() {
   ]));
 
   return (
-    <div className="flex-1 bg-background p-6 md:p-8 space-y-6 relative">
+    <div className="flex-1 bg-background p-6 md:p-8 space-y-6 relative animate-fade-in">
       {/* Toast Notification Banner */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border transition-all duration-300 ${
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border backdrop-blur-md transition-all duration-300 ${
           toast.type === 'success' 
-            ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-950/50' 
-            : 'bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-950/50'
+            ? 'bg-emerald-550/10 text-emerald-600 dark:text-emerald-400 border-emerald-550/20' 
+            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
         }`}>
-          {toast.type === 'success' ? <Check className="h-4 w-4 text-emerald-600" /> : <AlertCircle className="h-4 w-4 text-rose-600" />}
-          <span className="text-xs font-semibold">{toast.message}</span>
+          {toast.type === 'success' ? <Check className="h-4 w-4 text-emerald-500" /> : <AlertCircle className="h-4 w-4 text-rose-500" />}
+          <span className="text-xs font-semibold font-sans">{toast.message}</span>
         </div>
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-zinc-700 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-zinc-50">Inventario de Materiales</h1>
-          <p className="text-xs text-slate-600 dark:text-zinc-300 mt-1">Busca, filtra, edita o registra nuevos equipos en el sistema.</p>
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 font-display">Inventario de Materiales</h1>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 font-sans">Busca, filtra, edita o registra nuevos equipos en el sistema.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleOpenScanner}
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 text-xs font-bold text-slate-700 dark:text-zinc-100 px-4 py-2.5 transition shadow-sm"
+            className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-xs font-bold text-zinc-700 dark:text-zinc-200 px-4 py-2.5 transition-all hover:scale-[1.02] hover-lift font-display"
           >
             <QrCode className="h-4 w-4" />
             Escanear QR
           </button>
           <button
             onClick={handleExportCsv}
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 text-xs font-bold text-slate-700 dark:text-zinc-100 px-4 py-2.5 transition shadow-sm"
+            className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-xs font-bold text-zinc-700 dark:text-zinc-200 px-4 py-2.5 transition-all hover:scale-[1.02] hover-lift font-display"
           >
             <Download className="h-4 w-4" />
             Exportar CSV
           </button>
           <label
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 text-xs font-bold text-slate-700 dark:text-zinc-100 px-4 py-2.5 transition shadow-sm cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-xs font-bold text-zinc-700 dark:text-zinc-200 px-4 py-2.5 transition-all hover:scale-[1.02] hover-lift cursor-pointer font-display"
           >
             {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             Importar CSV
@@ -544,7 +542,7 @@ export default function MaterialsTable() {
           </label>
           <button
             onClick={handleOpenCreate}
-            className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-blue-500 transition shadow-lg shadow-blue-500/20"
+            className="flex items-center justify-center gap-2 rounded-xl btn-satin px-5 py-2.5 text-xs font-bold text-white transition hover:scale-[1.02] hover-lift font-display uppercase tracking-wider shadow-md shadow-zinc-900/10"
           >
             <Plus className="h-4 w-4" />
             Nuevo Material
@@ -553,44 +551,47 @@ export default function MaterialsTable() {
       </div>
 
       {/* Filters bar */}
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-5 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-5 rounded-2xl shadow-sm">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-5 glass-card p-5 rounded-2xl">
         {/* Search by serial */}
         <div className="space-y-1">
-          <label className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase tracking-wider">Número de Serie</label>
+          <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-display">Número de Serie</label>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-600 dark:text-zinc-300" />
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={serialQuery}
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
+          <input
+            type="text"
+            aria-label="Buscar por número de serie"
+            placeholder="Buscar..."
+            value={serialQuery}
               onChange={(e) => setSerialQuery(e.target.value)}
-              className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-800 dark:text-zinc-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 transition"
+              className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-9 pr-3 py-2 text-xs text-zinc-800 dark:text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition-all duration-200 font-sans"
             />
           </div>
         </div>
 
         {/* Search by type */}
         <div className="space-y-1">
-          <label className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase tracking-wider">Tipo</label>
+          <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-display">Tipo</label>
           <input
             type="text"
+            aria-label="Filtrar por tipo"
             placeholder="Ej: Router, Switch..."
             value={typeQuery}
             onChange={(e) => setTypeQuery(e.target.value)}
-            className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-zinc-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 transition"
+            className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-800 dark:text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition-all duration-200 font-sans"
           />
         </div>
 
         {/* Office filter */}
         <div className="space-y-1">
-          <label className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase tracking-wider">Oficina</label>
+          <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-display">Oficina</label>
           <select
+            aria-label="Filtrar por oficina"
             value={officeFilter}
             onChange={(e) => {
               setOfficeFilter(e.target.value);
               setPage(0);
             }}
-            className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-zinc-100 focus:outline-none focus:border-blue-500 transition"
+            className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-800 dark:text-zinc-100 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition-all duration-200 font-sans"
           >
             <option value="">Todas las oficinas</option>
             {offices.map((off) => (
@@ -603,14 +604,15 @@ export default function MaterialsTable() {
 
         {/* Status filter */}
         <div className="space-y-1">
-          <label className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase tracking-wider">Estado</label>
+          <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-display">Estado</label>
           <select
+            aria-label="Filtrar por estado"
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
               setPage(0);
             }}
-            className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-zinc-100 focus:outline-none focus:border-blue-500 transition"
+            className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-800 dark:text-zinc-100 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition-all duration-200 font-sans"
           >
             <option value="">Todos los estados</option>
             <option value="OPERATIVO">OPERATIVO</option>
@@ -624,13 +626,15 @@ export default function MaterialsTable() {
         <div className="flex items-end">
           <button
             onClick={() => {
+              setSerialQuery('');
+              setTypeQuery('');
               setSerialFilter('');
               setTypeFilter('');
               setOfficeFilter('');
               setStatusFilter('');
               setPage(0);
             }}
-            className="w-full py-2 border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
+            className="w-full py-2 border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold text-zinc-650 dark:text-zinc-350 hover:text-zinc-900 dark:hover:text-zinc-50 rounded-xl transition duration-200 font-display uppercase tracking-wider"
           >
             Limpiar Filtros
           </button>
@@ -639,8 +643,8 @@ export default function MaterialsTable() {
 
       {/* Error alert */}
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-rose-200 dark:border-rose-950/50 bg-rose-50 dark:bg-rose-950/20 p-4 text-xs text-rose-700 dark:text-rose-400">
-          <AlertCircle className="h-5 w-5 shrink-0" />
+        <div className="flex items-center gap-3 rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-xs text-rose-600 dark:text-rose-400 font-sans">
+          <AlertCircle className="h-5 w-5 shrink-0 text-rose-505" />
           <span>{error}</span>
         </div>
       )}
@@ -648,24 +652,24 @@ export default function MaterialsTable() {
       {/* Materials Table */}
       {loading ? (
         /* Loading Skeletons */
-        <div className="border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-2xl overflow-hidden p-6 space-y-4 shadow-sm">
+        <div className="glass-card rounded-2xl overflow-hidden p-6 space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-10 bg-slate-100 rounded-lg animate-pulse" />
+            <div key={i} className="h-10 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-lg animate-pulse" />
           ))}
         </div>
       ) : materials.length === 0 ? (
         /* Empty State */
-        <div className="border border-dashed border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-2xl p-12 text-center shadow-sm">
-          <AlertCircle className="mx-auto h-8 w-8 text-slate-700 dark:text-zinc-300" />
-          <h3 className="mt-3 text-sm font-semibold text-slate-900 dark:text-zinc-50">No se encontraron materiales</h3>
-          <p className="mt-1 text-xs text-slate-700 dark:text-zinc-300">Prueba cambiando los filtros de búsqueda.</p>
+        <div className="border border-dashed border-zinc-200 dark:border-zinc-800 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md rounded-2xl p-12 text-center shadow-sm">
+          <AlertCircle className="mx-auto h-8 w-8 text-zinc-400 dark:text-zinc-600" />
+          <h3 className="mt-3 text-sm font-bold text-zinc-900 dark:text-zinc-50 font-display">No se encontraron materiales</h3>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 font-sans">Prueba cambiando los filtros de búsqueda.</p>
         </div>
       ) : (
         /* Table data */
-        <div className="border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+        <div className="glass-card rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-xs text-slate-700 dark:text-zinc-200">
-              <thead className="border-b border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-300">
+            <table className="w-full border-collapse text-left text-xs text-zinc-700 dark:text-zinc-200 font-sans">
+              <thead className="border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/30 text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 font-display">
                 <tr>
                   <th className="px-6 py-4">Código</th>
                   <th className="px-6 py-4">Categoría/Tipo</th>
@@ -676,20 +680,20 @@ export default function MaterialsTable() {
                   <th className="px-6 py-4 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-700">
+              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800/60">
                 {materials.map((item) => (
-                  <tr key={item.publicCode} className="hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 transition-colors">
-                    <td className="px-6 py-4 font-mono text-slate-900 dark:text-zinc-50 font-bold">{item.publicCode}</td>
+                  <tr key={item.publicCode} className="hover:bg-zinc-50/40 dark:hover:bg-zinc-850/20 dark:bg-zinc-900/10 transition-colors duration-150">
+                    <td className="px-6 py-4 font-mono text-zinc-900 dark:text-zinc-50 font-bold font-display">{item.publicCode}</td>
                     <td className="px-6 py-4 font-medium">{item.materialType}</td>
-                    <td className="px-6 py-4">
-                      {item.brand} <span className="text-slate-600 dark:text-zinc-300 font-light">|</span> {item.model}
+                    <td className="px-6 py-4 text-zinc-800 dark:text-zinc-200">
+                      {item.brand} <span className="text-zinc-400 dark:text-zinc-600 font-light">|</span> {item.model}
                     </td>
-                    <td className="px-6 py-4 font-mono text-slate-600 dark:text-zinc-300">{item.serialNumber}</td>
-                    <td className="px-6 py-4 font-semibold text-slate-600 dark:text-zinc-300">
-                      {item.officeName || <span className="text-slate-600 dark:text-zinc-300 font-light">Sin asignar</span>}
+                    <td className="px-6 py-4 font-mono text-zinc-500 dark:text-zinc-400">{item.serialNumber}</td>
+                    <td className="px-6 py-4 font-semibold text-zinc-650 dark:text-zinc-350">
+                      {item.officeName || <span className="text-zinc-400 dark:text-zinc-650 font-light italic">Sin asignar</span>}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getStatusBadgeClass(item.status)}`}>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide border ${getStatusBadgeClass(item.status)}`}>
                         {item.status}
                       </span>
                     </td>
@@ -697,7 +701,7 @@ export default function MaterialsTable() {
                       <div className="flex justify-end gap-2">
                         <Link
                           href={`/materials/${item.publicCode}`}
-                          className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 hover:text-slate-900 dark:text-zinc-50 rounded-lg transition"
+                          className="p-2 border border-zinc-200 dark:border-zinc-805 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-150 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-350 rounded-lg hover:scale-105 active:scale-95 transition-all shadow-sm"
                           title="Ver detalle"
                         >
                           <Eye className="h-3.5 w-3.5" />
@@ -706,26 +710,26 @@ export default function MaterialsTable() {
                           <>
                             <button
                               onClick={() => handleOpenEdit(item)}
-                              className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 hover:text-slate-900 dark:text-zinc-50 rounded-lg transition"
+                              className="p-2 border border-zinc-200 dark:border-zinc-805 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-150 dark:hover:bg-zinc-800 text-zinc-750 dark:text-zinc-350 rounded-lg hover:scale-105 active:scale-95 transition-all shadow-sm"
                               title="Editar"
                             >
-                              <Edit2 className="h-3.5 w-3.5 text-blue-600" />
+                              <Edit2 className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" />
                             </button>
                             <button
                               onClick={() => handleOpenDecommission(item)}
-                              className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-rose-950/20 hover:border-rose-900/50 rounded-lg transition"
+                              className="p-2 border border-zinc-200 dark:border-zinc-805 bg-white/50 dark:bg-zinc-900/50 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-505 rounded-lg hover:scale-105 active:scale-95 transition-all shadow-sm"
                               title="Dar de baja"
                             >
-                              <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                              <Trash2 className="h-3.5 w-3.5 text-rose-500" />
                             </button>
                           </>
                         ) : (
                           <button
                             onClick={() => handleReactivate(item.publicCode)}
-                            className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-emerald-950/20 hover:border-emerald-900/50 rounded-lg transition text-emerald-600"
+                            className="p-2 border border-zinc-200 dark:border-zinc-850 bg-white/50 dark:bg-zinc-900/50 hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-500 rounded-lg hover:scale-105 active:scale-95 transition-all shadow-sm"
                             title="Dar de alta"
                           >
-                            <Check className="h-3.5 w-3.5 text-emerald-600" />
+                            <Check className="h-3.5 w-3.5 text-emerald-500" />
                           </button>
                         )}
                       </div>
@@ -738,26 +742,26 @@ export default function MaterialsTable() {
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="border-t border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 px-6 py-4 flex items-center justify-between">
-              <span className="text-xs text-slate-600 dark:text-zinc-300 font-medium">
-                Mostrando <span className="text-slate-700 dark:text-zinc-200">{materials.length}</span> de{' '}
-                <span className="text-slate-700 dark:text-zinc-200">{totalElements}</span> resultados
+            <div className="border-t border-zinc-200 dark:border-zinc-800/85 bg-zinc-50/50 dark:bg-zinc-900/30 px-6 py-4 flex items-center justify-between">
+              <span className="text-xs text-zinc-550 dark:text-zinc-400 font-medium">
+                Mostrando <span className="text-zinc-750 dark:text-zinc-200 font-bold">{materials.length}</span> de{' '}
+                <span className="text-zinc-750 dark:text-zinc-200 font-bold">{totalElements}</span> resultados
               </span>
               <div className="flex gap-2">
                 <button
                   disabled={page === 0}
                   onClick={() => setPage(page - 1)}
-                  className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 disabled:opacity-40 rounded-lg text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
+                  className="p-2 border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-150 dark:hover:bg-zinc-800 disabled:opacity-30 rounded-lg text-zinc-600 dark:text-zinc-350 transition hover:scale-105 active:scale-95"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <span className="flex items-center px-3 py-1 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-lg font-bold text-slate-700 dark:text-zinc-200">
+                <span className="flex items-center px-3 py-1 border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 rounded-lg font-bold text-zinc-700 dark:text-zinc-200 font-display">
                   {page + 1} / {totalPages}
                 </span>
                 <button
                   disabled={page >= totalPages - 1}
                   onClick={() => setPage(page + 1)}
-                  className="p-2 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700/40 dark:bg-zinc-900 disabled:opacity-40 rounded-lg text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
+                  className="p-2 border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-150 dark:hover:bg-zinc-800 disabled:opacity-30 rounded-lg text-zinc-600 dark:text-zinc-350 transition hover:scale-105 active:scale-95"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -771,27 +775,26 @@ export default function MaterialsTable() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleCreateSubmit} className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl shadow-sm w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-blue-600" />
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-zinc-700 flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900 dark:text-zinc-50">Registrar Nuevo Material</h3>
-              <button type="button" onClick={() => setShowCreateModal(false)} className="text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:text-zinc-100 p-1 rounded-lg hover:bg-slate-100 transition">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleCreateSubmit} className="glass-card rounded-2xl shadow-2xl w-full max-w-lg relative overflow-hidden flex flex-col max-h-[90vh] animate-fade-in border border-zinc-200 dark:border-zinc-805">
+            <div className="px-6 py-5 border-b border-zinc-200 dark:border-zinc-805 flex items-center justify-between">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 font-display">Registrar Nuevo Material</h3>
+              <button type="button" onClick={() => setShowCreateModal(false)} className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+            <div className="p-6 overflow-y-auto space-y-4 flex-1 font-sans">
               {formError && (
-                <div className="p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-950/50 text-rose-700 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
+                <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-rose-505" />
                   {formError}
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Tipo de Material *</label>
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Tipo de Material *</label>
                   <input
                     type="text"
                     required
@@ -800,11 +803,11 @@ export default function MaterialsTable() {
                     onBlur={(e) => setFormType(normalizeInput(e.target.value))}
                     list="material-types"
                     placeholder="Ej: Router"
-                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50 uppercase"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 uppercase tracking-wide transition duration-150"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Marca *</label>
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Marca *</label>
                   <input
                     type="text"
                     required
@@ -813,14 +816,14 @@ export default function MaterialsTable() {
                     onBlur={(e) => setFormBrand(normalizeInput(e.target.value))}
                     list="material-brands"
                     placeholder="Ej: MikroTik"
-                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50 uppercase"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 uppercase tracking-wide transition duration-150"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Modelo *</label>
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Modelo *</label>
                   <input
                     type="text"
                     required
@@ -828,11 +831,11 @@ export default function MaterialsTable() {
                     onChange={(e) => setFormModel(normalizeInput(e.target.value))}
                     onBlur={(e) => setFormModel(normalizeInput(e.target.value))}
                     placeholder="Ej: RB4011"
-                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50 uppercase"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 uppercase tracking-wide transition duration-150"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Número de Serie *</label>
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Número de Serie *</label>
                   <input
                     type="text"
                     required
@@ -840,19 +843,19 @@ export default function MaterialsTable() {
                     onChange={(e) => setFormSerial(normalizeInput(e.target.value))}
                     onBlur={(e) => setFormSerial(normalizeInput(e.target.value))}
                     placeholder="Ej: SN12345678"
-                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50 uppercase"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 uppercase tracking-wide transition duration-150 font-mono"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Oficina Asignada</label>
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Oficina Asignada</label>
                   <select
                     value={formOffice}
                     onChange={(e) => setFormOffice(e.target.value)}
                     required
-                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 transition duration-150 font-medium"
                   >
                     <option value="" disabled>Seleccione una oficina...</option>
                     {offices.map((off) => (
@@ -863,11 +866,11 @@ export default function MaterialsTable() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Estado Inicial</label>
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Estado Inicial</label>
                   <select
                     value={formStatus}
                     onChange={(e) => setFormStatus(e.target.value)}
-                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 transition duration-150 font-medium"
                   >
                     <option value="OPERATIVO">OPERATIVO</option>
                     <option value="EN_REPARACION">EN REPARACIÓN</option>
@@ -877,30 +880,30 @@ export default function MaterialsTable() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Descripción / Notas</label>
+                <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Descripción / Notas</label>
                 <textarea
                   value={formDesc}
                   onChange={(e) => setFormDesc(normalizeInput(e.target.value))}
                   onBlur={(e) => setFormDesc(normalizeInput(e.target.value))}
                   placeholder="Agregar detalles adicionales del equipo..."
                   rows={3}
-                  className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50 resize-none uppercase"
+                  className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 resize-none uppercase tracking-wide transition duration-150"
                 />
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-200 dark:border-zinc-700 flex justify-end gap-2 bg-slate-50 dark:bg-zinc-900">
+            <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-805 flex justify-end gap-2 bg-zinc-50/50 dark:bg-zinc-900/50">
               <button
                 type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
+                className="px-4 py-2 border border-zinc-200 hover:bg-zinc-100 dark:border-zinc-700/80 dark:hover:bg-zinc-800 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-50 transition font-display uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98]"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-xs font-bold text-white transition flex items-center gap-2"
+                className="px-4 py-2 rounded-xl btn-satin disabled:opacity-40 text-xs font-bold text-white transition flex items-center gap-2 font-display uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-zinc-900/10"
               >
                 {submitting && <Loader2 className="h-3 w-3 animate-spin" />}
                 Guardar Registro
@@ -912,27 +915,26 @@ export default function MaterialsTable() {
 
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleEditSubmit} className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl shadow-sm w-full max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-blue-600" />
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-zinc-700 flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900 dark:text-zinc-50">Editar Material</h3>
-              <button type="button" onClick={() => setShowEditModal(false)} className="text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:text-zinc-100 p-1 rounded-lg hover:bg-slate-100 transition">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleEditSubmit} className="glass-card rounded-2xl shadow-2xl w-full max-w-lg relative overflow-hidden flex flex-col max-h-[90vh] animate-fade-in border border-zinc-200 dark:border-zinc-805">
+            <div className="px-6 py-5 border-b border-zinc-200 dark:border-zinc-805 flex items-center justify-between">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 font-display">Editar Material</h3>
+              <button type="button" onClick={() => setShowEditModal(false)} className="text-zinc-500 dark:text-zinc-400 hover:text-slate-800 dark:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+            <div className="p-6 overflow-y-auto space-y-4 flex-1 font-sans">
               {formError && (
-                <div className="p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-950/50 text-rose-700 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
+                <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-rose-505" />
                   {formError}
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Tipo de Material *</label>
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Tipo de Material *</label>
                   <input
                     type="text"
                     required
@@ -940,11 +942,11 @@ export default function MaterialsTable() {
                     onChange={(e) => setFormType(normalizeInput(e.target.value))}
                     onBlur={(e) => setFormType(normalizeInput(e.target.value))}
                     list="material-types"
-                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50 uppercase"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 uppercase tracking-wide transition duration-150"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Marca *</label>
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Marca *</label>
                   <input
                     type="text"
                     required
@@ -952,44 +954,44 @@ export default function MaterialsTable() {
                     onChange={(e) => setFormBrand(normalizeInput(e.target.value))}
                     onBlur={(e) => setFormBrand(normalizeInput(e.target.value))}
                     list="material-brands"
-                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50 uppercase"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 uppercase tracking-wide transition duration-155"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Modelo *</label>
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Modelo *</label>
                   <input
                     type="text"
                     required
                     value={formModel}
                     onChange={(e) => setFormModel(normalizeInput(e.target.value))}
                     onBlur={(e) => setFormModel(normalizeInput(e.target.value))}
-                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50 uppercase"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 uppercase tracking-wide transition duration-150"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Número de Serie *</label>
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Número de Serie *</label>
                   <input
                     type="text"
                     required
                     value={formSerial}
                     onChange={(e) => setFormSerial(normalizeInput(e.target.value))}
                     onBlur={(e) => setFormSerial(normalizeInput(e.target.value))}
-                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50 uppercase"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 uppercase tracking-wide transition duration-150 font-mono"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Oficina Asignada</label>
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Oficina Asignada</label>
                   <select
                     value={formOffice}
                     onChange={(e) => setFormOffice(e.target.value)}
                     required
-                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 transition duration-150 font-medium"
                   >
                     <option value="" disabled>Seleccione una oficina...</option>
                     {offices.map((off) => (
@@ -1000,11 +1002,11 @@ export default function MaterialsTable() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Estado</label>
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Estado</label>
                   <select
                     value={formStatus}
                     onChange={(e) => setFormStatus(e.target.value)}
-                    className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 transition duration-150 font-medium"
                   >
                     <option value="OPERATIVO">OPERATIVO</option>
                     <option value="EN_REPARACION">EN REPARACIÓN</option>
@@ -1014,29 +1016,29 @@ export default function MaterialsTable() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Descripción / Notas</label>
+                <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Descripción / Notas</label>
                 <textarea
                   value={formDesc}
                   onChange={(e) => setFormDesc(normalizeInput(e.target.value))}
                   onBlur={(e) => setFormDesc(normalizeInput(e.target.value))}
                   rows={3}
-                  className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50 resize-none uppercase"
+                  className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 resize-none uppercase tracking-wide transition duration-150"
                 />
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-200 dark:border-zinc-700 flex justify-end gap-2 bg-slate-50 dark:bg-zinc-900">
+            <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-805 flex justify-end gap-2 bg-zinc-50/50 dark:bg-zinc-900/50">
               <button
                 type="button"
                 onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
+                className="px-4 py-2 border border-zinc-200 hover:bg-zinc-100 dark:border-zinc-700/80 dark:hover:bg-zinc-800 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-50 transition font-display uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98]"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-xs font-bold text-white transition flex items-center gap-2"
+                className="px-4 py-2 rounded-xl btn-satin disabled:opacity-40 text-xs font-bold text-white transition flex items-center gap-2 font-display uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-zinc-900/10"
               >
                 {submitting && <Loader2 className="h-3 w-3 animate-spin" />}
                 Guardar Cambios
@@ -1048,54 +1050,53 @@ export default function MaterialsTable() {
 
       {/* Decommission Modal */}
       {showDecommissionModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleDecommissionSubmit} className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl shadow-sm w-full max-w-md shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-rose-600" />
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-zinc-700 flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900 dark:text-zinc-50">Dar de Baja Material</h3>
-              <button type="button" onClick={() => setShowDecommissionModal(false)} className="text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:text-zinc-100 p-1 rounded-lg hover:bg-slate-100 transition">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleDecommissionSubmit} className="glass-card rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden animate-fade-in border border-zinc-250 dark:border-zinc-805">
+            <div className="px-6 py-5 border-b border-zinc-200 dark:border-zinc-805 flex items-center justify-between">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 font-display">Dar de Baja Material</h3>
+              <button type="button" onClick={() => setShowDecommissionModal(false)} className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 font-sans">
               {formError && (
-                <div className="p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-950/50 text-rose-700 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
+                <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-rose-505" />
                   {formError}
                 </div>
               )}
 
-              <p className="text-xs text-slate-600 dark:text-zinc-300 leading-relaxed">
+              <p className="text-xs text-zinc-650 dark:text-zinc-350 leading-relaxed">
                 ¿Estás seguro de que deseas dar de baja este material? Esta acción es irreversible y retirará el material
-                del inventario activo de Gestión De Inventario.
+                del inventario activo de {branding.appName}.
               </p>
 
               <div className="space-y-1">
-                <label className="text-xs text-slate-600 dark:text-zinc-300 font-semibold">Comentario / Motivo de la baja *</label>
+                <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Comentario / Motivo de la baja *</label>
                 <textarea
                   required
                   value={decommissionComment}
                   onChange={(e) => setDecommissionComment(e.target.value)}
                   placeholder="Ej: Desgaste irreparable, fuera de servicio oficial, robado, etc..."
                   rows={3}
-                  className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 text-slate-900 dark:text-zinc-50 resize-none"
+                  className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 resize-none transition duration-150"
                 />
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-200 dark:border-zinc-700 flex justify-end gap-2 bg-slate-50 dark:bg-zinc-900">
+            <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-805 flex justify-end gap-2 bg-zinc-50/50 dark:bg-zinc-900/50">
               <button
                 type="button"
                 onClick={() => setShowDecommissionModal(false)}
-                className="px-4 py-2 border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
+                className="px-4 py-2 border border-zinc-200 hover:bg-zinc-150 dark:border-zinc-700/80 dark:hover:bg-zinc-850 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-50 transition font-display uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98]"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-xs font-bold text-white transition flex items-center gap-2"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-xs font-bold text-white transition flex items-center gap-2 font-display uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-rose-900/10"
               >
                 {submitting && <Loader2 className="h-3 w-3 animate-spin" />}
                 Confirmar Baja
@@ -1107,46 +1108,45 @@ export default function MaterialsTable() {
 
       {/* Scanner Modal */}
       {showScannerModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl shadow-sm w-full max-w-md shadow-2xl relative overflow-hidden flex flex-col">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-blue-600" />
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-zinc-700 flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900 dark:text-zinc-50 flex items-center gap-2">
-                <QrCode className="h-5 w-5 text-blue-600 animate-pulse" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="glass-card rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden flex flex-col animate-fade-in border border-zinc-200 dark:border-zinc-805">
+            <div className="px-6 py-5 border-b border-zinc-200 dark:border-zinc-805 flex items-center justify-between">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2 font-display">
+                <QrCode className="h-5 w-5 text-zinc-650 animate-pulse" />
                 Escanear Código QR
               </h3>
               <button
                 type="button"
                 onClick={() => setShowScannerModal(false)}
-                className="text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:text-zinc-100 p-1 rounded-lg hover:bg-slate-100 transition"
+                className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4 flex-1 flex flex-col items-center">
+            <div className="p-6 space-y-4 flex-1 flex flex-col items-center font-sans">
               {scannerError && (
-                <div className="w-full p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-950/50 text-rose-700 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
+                <div className="w-full p-3 bg-rose-550/10 border border-rose-550/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-505" />
                   <span>{scannerError}</span>
                 </div>
               )}
 
-              <p className="text-xs text-slate-600 dark:text-zinc-300 text-center leading-relaxed max-w-xs">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center leading-relaxed max-w-xs">
                 Apunta con la cámara trasera de tu dispositivo al código QR del material para ir directamente a sus detalles.
               </p>
 
               {/* Reader camera element */}
-              <div className="w-full max-w-sm border border-slate-200 dark:border-zinc-700 rounded-2xl overflow-hidden bg-slate-950/5 relative aspect-square">
+              <div className="w-full max-w-sm border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-zinc-950/5 relative aspect-square">
                 <div id="qr-reader" className="w-full h-full overflow-hidden" />
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-200 dark:border-zinc-700 flex justify-end bg-slate-50 dark:bg-zinc-900">
+            <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-805 flex justify-end bg-zinc-50/50 dark:bg-zinc-900/50">
               <button
                 type="button"
                 onClick={() => setShowScannerModal(false)}
-                className="px-4 py-2 border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:text-zinc-50 transition"
+                className="px-4 py-2 border border-zinc-200 hover:bg-zinc-150 dark:border-zinc-700/80 dark:hover:bg-zinc-850 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-50 transition font-display uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98]"
               >
                 Cerrar Cámara
               </button>

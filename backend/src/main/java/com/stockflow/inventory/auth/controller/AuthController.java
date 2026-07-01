@@ -2,8 +2,11 @@ package com.stockflow.inventory.auth.controller;
 
 import com.stockflow.inventory.auth.dto.*;
 import com.stockflow.inventory.auth.service.AuthService;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -27,34 +30,86 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @RequestBody LoginRequest loginRequest,
-            HttpServletRequest request
+            HttpServletRequest request,
+            HttpServletResponse response
     ) {
         String ip = getClientIp(request);
         String userAgent = request.getHeader("User-Agent");
-        LoginResponse response = authService.login(loginRequest.getEmail(), loginRequest.getPassword(), ip, userAgent);
-        return ResponseEntity.ok(response);
+        LoginResponse loginResponse = authService.login(loginRequest.getEmail(), loginRequest.getPassword(), ip, userAgent);
+        
+        String token = loginResponse.getRefreshToken();
+        // Remove token from JSON body for 10/10 security (XSS protection)
+        loginResponse.setRefreshToken(null);
+        
+        setRefreshTokenCookie(response, token, 7 * 24 * 60 * 60);
+        
+        return ResponseEntity.ok(loginResponse);
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<LoginResponse> refresh(
-            @RequestBody RefreshRequest refreshRequest,
-            HttpServletRequest request
+            @RequestBody(required = false) RefreshRequest refreshRequest,
+            HttpServletRequest request,
+            HttpServletResponse response
     ) {
         String ip = getClientIp(request);
         String userAgent = request.getHeader("User-Agent");
-        LoginResponse response = authService.refresh(refreshRequest.getRefreshToken(), ip, userAgent);
-        return ResponseEntity.ok(response);
+        
+        String token = null;
+        if (refreshRequest != null && refreshRequest.getRefreshToken() != null && !refreshRequest.getRefreshToken().isEmpty()) {
+            token = refreshRequest.getRefreshToken();
+        } else {
+            token = getCookieValue(request, "refreshToken");
+        }
+        
+        if (token == null || token.isEmpty()) {
+            throw new BadCredentialsException("Refresh token is missing");
+        }
+        
+        LoginResponse loginResponse = authService.refresh(token, ip, userAgent);
+        
+        String newToken = loginResponse.getRefreshToken();
+        // Remove token from JSON body for 10/10 security (XSS protection)
+        loginResponse.setRefreshToken(null);
+        
+        setRefreshTokenCookie(response, newToken, 7 * 24 * 60 * 60);
+        
+        return ResponseEntity.ok(loginResponse);
     }
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
-            @RequestBody LogoutRequest logoutRequest,
-            HttpServletRequest request
+            @RequestBody(required = false) LogoutRequest logoutRequest,
+            HttpServletRequest request,
+            HttpServletResponse response
     ) {
         String ip = getClientIp(request);
         String userAgent = request.getHeader("User-Agent");
-        authService.logout(logoutRequest.getRefreshToken(), ip, userAgent);
+        
+        String token = null;
+        if (logoutRequest != null && logoutRequest.getRefreshToken() != null && !logoutRequest.getRefreshToken().isEmpty()) {
+            token = logoutRequest.getRefreshToken();
+        } else {
+            token = getCookieValue(request, "refreshToken");
+        }
+        
+        if (token != null && !token.isEmpty()) {
+            authService.logout(token, ip, userAgent);
+        }
+        
+        clearRefreshTokenCookie(response);
+        
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/accept-invitation")
+    public ResponseEntity<Map<String, String>> acceptInvitation(
+            @RequestBody AcceptInvitationRequest request
+    ) {
+        authService.acceptInvitation(request.getEmail(), request.getToken(), request.getPassword());
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Contraseña configurada con éxito. Ya puedes iniciar sesión.");
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/admin-only")
@@ -93,6 +148,39 @@ public class AuthController {
         body.put("message", ex.getMessage());
         body.put("path", request.getRequestURI());
         return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED).body(body);
+    }
+
+    private void setRefreshTokenCookie(HttpServletResponse response, String token, long maxAgeSeconds) {
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", token)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(maxAgeSeconds)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private void clearRefreshTokenCookie(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(0)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private String getCookieValue(HttpServletRequest request, String name) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (name.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 
     private String getClientIp(HttpServletRequest request) {

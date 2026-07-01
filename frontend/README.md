@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StockFlow Inventory Management System - Frontend
 
-## Getting Started
+Interfaz web profesional, reactiva y de alto impacto estético para la gestión de inventario y trazabilidad física de activos de StockFlow.
 
-First, run the development server:
+**Autor:** JMRS
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 🎨 Sistema de Diseño y Estética
+
+El frontend implementa una estética de diseño premium personalizada:
+- **Tema Monochrome Plomo/Zinc:** Configuración visual en tonos platinados, plomo y antracita (`zinc`) que transmiten profesionalismo y robustez técnica.
+- **Glassmorphism:** Componentes con clases `.glass-card` que aprovechan efectos de traslúcidez, desenfoque de fondo y bordes satinados semi-transparentes.
+- **Tipografía Moderna:** Carga dinámica optimizada de las fuentes *Outfit* e *Inter*.
+- **Animaciones Suaves:** Microinteracciones de hover y transiciones animadas para botones, menús colapsables y charts para dinamizar la interacción.
+- **Mobile First QR View:** La pantalla de escaneo móvil (`/i/[publicCode]`) simula una interfaz de aplicación móvil nativa con accesos directos táctiles de gran tamaño.
+
+---
+
+## 🚀 Tecnologías Principales
+
+- **Core:** Next.js 16 (App Router con React Server Components)
+- **Lenguaje:** TypeScript (Tipado estricto)
+- **Librería de Iconos:** Lucide React
+- **Estilos:** CSS Vanilla estructurado en variables globales de CSS (`index.css` / `globals.css`)
+- **Visualización de Datos:** Recharts (para gráficos dinámicos de barras y pastel)
+- **Pruebas:** Vitest junto con React Testing Library
+
+---
+
+## 📂 Estructura del Código
+
+```text
+frontend/
+├── src/
+│   ├── app/                # Rutas y páginas de Next.js (Dashboard, Login, Materiales, Auditoría, Configuración, Escaneo QR)
+│   ├── components/         # Componentes transversales compartidos
+│   ├── modules/            # Módulos encapsulados por dominio
+│   │   ├── auth/           # Login, Proveedor de Autenticación (AuthProvider), Hooks y Formularios
+│   │   ├── branding/       # Componentes y hooks de personalización visual dinámicos
+│   │   ├── dashboard/      # Métricas KPI, Puestos de Trabajo y Gráficos estadísticos
+│   │   └── materials/      # Tablas y modales para materiales, oficinas, usuarios e historiales de cambios
+│   ├── services/           # Cliente HTTP centralizado (`api-client.ts`) para consultas al Backend
+│   └── globals.css         # Estilos globales y tokens del sistema de diseño (colores, fondos, sombras)
+├── Dockerfile              # Empaquetado de producción
+├── package.json            # Scripts npm y dependencias
+└── vitest.config.ts        # Configuración del motor de pruebas unitarias
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ⚙️ Desarrollo e Instalación
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Instalar dependencias
+```bash
+npm install
+```
 
-## Learn More
+### 2. Ejecutar servidor de desarrollo
+Inicia el servidor local en http://localhost:3000:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Compilación de Producción
+Genera la build optimizada del cliente:
+```bash
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🧪 Pruebas Unitarias
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+El frontend incluye cobertura de pruebas para componentes interactivos y hooks de autenticación. Ejecuta la suite de pruebas mediante Vitest:
+```bash
+npm run test
+```

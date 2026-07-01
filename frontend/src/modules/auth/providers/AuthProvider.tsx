@@ -6,6 +6,7 @@ export interface UserSession {
   publicId: string;
   email: string;
   role: string;
+  permissions: string[];
   mustChangePassword?: boolean;
 }
 
@@ -32,10 +33,32 @@ function parseJwt(token: string) {
         .join('')
     );
     const decoded = JSON.parse(jsonPayload);
+    
+    // Fallback for old tokens/sessions without permissions claim
+    let permissions = decoded.permissions;
+    if (!permissions || permissions.length === 0) {
+      if (decoded.role === 'ADMIN') {
+        permissions = [
+          'CREATE_USER', 'READ_USER', 'UPDATE_USER', 
+          'CREATE_OFFICE', 'UPDATE_OFFICE', 
+          'CREATE_MATERIAL', 'UPDATE_MATERIAL', 'UPDATE_MATERIAL_STATUS', 'READ_MATERIAL_HISTORY',
+          'READ_DASHBOARD', 'READ_AUDIT_LOG', 'MANAGE_API_CLIENTS', 'REGENERATE_QR', 'MANAGE_ROLES'
+        ];
+      } else if (decoded.role === 'TECNICO') {
+        permissions = [
+          'CREATE_OFFICE', 'UPDATE_OFFICE', 
+          'CREATE_MATERIAL', 'UPDATE_MATERIAL', 'UPDATE_MATERIAL_STATUS', 'READ_MATERIAL_HISTORY'
+        ];
+      } else {
+        permissions = [];
+      }
+    }
+
     return {
       publicId: decoded.public_id,
       email: decoded.sub,
       role: decoded.role,
+      permissions: permissions,
       mustChangePassword: !!decoded.must_change_password,
       exp: decoded.exp,
     };
@@ -52,40 +75,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const BASE_URL = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080');
 
   const logout = useCallback(async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
     localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
     setUser(null);
     setIsAuthenticated(false);
     setLoading(false);
 
-    if (refreshToken) {
-      try {
-        fetch(`${BASE_URL}/api/v1/auth/logout`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
-        }).catch(() => {
-          // Ignore background network errors
-        });
-      } catch {
-        // Ignore
-      }
+    try {
+      fetch(`${BASE_URL}/api/v1/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}), // El backend leerá la cookie
+      }).catch(() => {
+        // Ignorar fallos de red en segundo plano
+      });
+    } catch {
+      // Ignorar
     }
   }, [BASE_URL]);
 
   const refreshSession = useCallback(async (): Promise<string | null> => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) {
-      await logout();
-      return null;
-    }
-
     try {
       const res = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
+        body: JSON.stringify({}), // El backend leerá la cookie
       });
 
       if (!res.ok) {
@@ -93,17 +106,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const responseData = await res.json();
-      const data = responseData.data || responseData; // Support Spring ApiResponse structure if mapped
+      const data = responseData.data || responseData;
       
       const newAccess = data.accessToken;
-      const newRefresh = data.refreshToken;
 
-      if (!newAccess || !newRefresh) {
+      if (!newAccess) {
         throw new Error('Invalid refresh response');
       }
 
       localStorage.setItem('accessToken', newAccess);
-      localStorage.setItem('refreshToken', newRefresh);
 
       const decoded = parseJwt(newAccess);
       if (decoded) {
@@ -111,6 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           publicId: decoded.publicId,
           email: decoded.email,
           role: decoded.role,
+          permissions: decoded.permissions,
           mustChangePassword: decoded.mustChangePassword,
         });
         setIsAuthenticated(true);
@@ -137,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (err?.error?.message) message = err.error.message;
         else if (err?.message) message = err.message;
       } catch {
-        // Ignore
+        // Ignorar
       }
       throw new Error(message);
     }
@@ -146,11 +158,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = responseData.data || responseData;
 
     const access = data.accessToken;
-    const refresh = data.refreshToken;
     const mustChange = !!data.mustChangePassword;
 
+    // Almacenar únicamente el access token (el refresh token se maneja vía cookie HttpOnly)
     localStorage.setItem('accessToken', access);
-    localStorage.setItem('refreshToken', refresh);
 
     const decoded = parseJwt(access);
     if (decoded) {
@@ -158,6 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         publicId: decoded.publicId,
         email: decoded.email,
         role: decoded.role,
+        permissions: decoded.permissions,
         mustChangePassword: decoded.mustChangePassword,
       });
       setIsAuthenticated(true);
@@ -169,12 +181,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
 
-  // Initialize session from storage
+  // Inicializar sesión desde almacenamiento
   useEffect(() => {
     const initSession = async () => {
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) {
-        setLoading(false);
+        // Intento de refresco silencioso en carga inicial por si existe la cookie
+        const token = await refreshSession();
+        if (!token) {
+          setLoading(false);
+        }
         return;
       }
 
@@ -184,7 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Check if access token is close to expiry (less than 1 min left)
+      // Comprobar si el token expira pronto (menos de 1 minuto)
       const bufferSeconds = 60;
       const nowInSeconds = Math.floor(Date.now() / 1000);
       if (decoded.exp - nowInSeconds < bufferSeconds) {
@@ -194,6 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           publicId: decoded.publicId,
           email: decoded.email,
           role: decoded.role,
+          permissions: decoded.permissions,
           mustChangePassword: decoded.mustChangePassword,
         });
         setIsAuthenticated(true);

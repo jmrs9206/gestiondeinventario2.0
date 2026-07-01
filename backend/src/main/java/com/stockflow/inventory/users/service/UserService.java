@@ -57,36 +57,46 @@ public class UserService {
         return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 12);
     }
 
+    private String normalizeText(String input) {
+        return com.stockflow.inventory.common.utils.TextNormalizer.normalize(input);
+    }
+
+    private String normalizeEmail(String input) {
+        if (input == null) {
+            return "";
+        }
+        return com.stockflow.inventory.common.utils.TextNormalizer.normalize(input).toLowerCase();
+    }
+
     @Transactional
     public UserResponse createUser(UserCreateRequest request, String performerPublicId, String ip, String userAgent) {
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new ConflictException("Email already in use: " + request.getEmail());
+        String normalizedEmail = normalizeEmail(request.getEmail());
+        if (userRepository.findByEmail(normalizedEmail).isPresent()) {
+            throw new ConflictException("Email already in use: " + normalizedEmail);
         }
 
         String publicId = UUID.randomUUID().toString();
-        String rawPassword = request.getPassword();
-        if (rawPassword == null || rawPassword.isBlank()) {
-            rawPassword = generateSecurePassword();
-        }
-        String passwordHash = passwordEncoder.encode(rawPassword);
+        String passwordHash = passwordEncoder.encode(UUID.randomUUID().toString());
 
         User user = new User(
                 publicId,
-                request.getFirstName(),
-                request.getLastName(),
-                request.getEmail(),
+                normalizeText(request.getFirstName()),
+                normalizeText(request.getLastName()),
+                normalizedEmail,
                 passwordHash,
                 request.getRole()
         );
         user.setActive(true);
+        user.setMustChangePassword(true);
+        user.setInvitationToken(UUID.randomUUID().toString());
+        user.setInvitationTokenExpiry(java.time.LocalDateTime.now().plusDays(7));
 
         User savedUser = userRepository.save(user);
 
-        // Send email with credentials
         try {
-            emailService.sendCredentialsEmail(savedUser.getEmail(), savedUser.getFirstName(), savedUser.getLastName(), rawPassword);
+            emailService.sendInvitationEmail(savedUser.getEmail(), savedUser.getFirstName(), savedUser.getLastName(), savedUser.getInvitationToken());
         } catch (Exception e) {
-            System.err.println("WARN: Failed to send credentials email to " + savedUser.getEmail() + ": " + e.getMessage());
+            System.err.println("WARN: Failed to send invitation email to " + savedUser.getEmail() + ": " + e.getMessage());
         }
 
         String newValueJson = toJson(new UserResponse(savedUser));
@@ -104,17 +114,18 @@ public class UserService {
             throw new ConflictException("No se permite modificar la cuenta del administrador principal del sistema.");
         }
 
-        if (!user.getEmail().equalsIgnoreCase(request.getEmail())) {
-            if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-                throw new ConflictException("Email already in use: " + request.getEmail());
+        String normalizedEmail = normalizeEmail(request.getEmail());
+        if (!user.getEmail().equalsIgnoreCase(normalizedEmail)) {
+            if (userRepository.findByEmail(normalizedEmail).isPresent()) {
+                throw new ConflictException("Email already in use: " + normalizedEmail);
             }
-            user.setEmail(request.getEmail());
+            user.setEmail(normalizedEmail);
         }
 
         String oldValueJson = toJson(new UserResponse(user));
 
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
+        user.setFirstName(normalizeText(request.getFirstName()));
+        user.setLastName(normalizeText(request.getLastName()));
         user.setRole(request.getRole());
 
         User updatedUser = userRepository.save(user);

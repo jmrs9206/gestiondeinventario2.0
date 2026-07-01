@@ -62,18 +62,12 @@ public class MaterialService {
     }
 
     private String normalizeText(String input) {
-        if (input == null) {
-            return "";
-        }
-        String normalized = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFD);
-        normalized = normalized.replaceAll("\\p{M}", "");
-        return normalized.toUpperCase().trim();
+        return com.stockflow.inventory.common.utils.TextNormalizer.normalize(input);
     }
 
     private String generatePublicCode() {
         StringBuilder sb = new StringBuilder(24);
-        sb.append("mat_");
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 24; i++) {
             sb.append(CHARACTERS.charAt(RANDOM.nextInt(CHARACTERS.length())));
         }
         return sb.toString();
@@ -115,7 +109,7 @@ public class MaterialService {
                 savedMaterial.getStatus(),
                 null,
                 savedMaterial.getOffice(),
-                request.getComment(),
+                normalizeText(request.getComment()),
                 performer
         );
         materialHistoryRepository.save(history);
@@ -175,7 +169,7 @@ public class MaterialService {
                 updatedMaterial.getStatus(),
                 prevOffice,
                 updatedMaterial.getOffice(),
-                request.getComment(),
+                normalizeText(request.getComment()),
                 performer
         );
         materialHistoryRepository.save(history);
@@ -221,7 +215,7 @@ public class MaterialService {
                 MaterialStatus.BAJA,
                 office,
                 office,
-                comment,
+                normalizeText(comment),
                 performer
         );
         materialHistoryRepository.save(history);
@@ -308,7 +302,7 @@ public class MaterialService {
                 MaterialStatus.OPERATIVO,
                 office,
                 office,
-                comment,
+                normalizeText(comment),
                 performer
         );
         materialHistoryRepository.save(history);
@@ -432,7 +426,7 @@ public class MaterialService {
               .append(escapeCsv(material.getSerialNumber())).append(",")
               .append(escapeCsv(material.getOffice().getName())).append(",")
               .append(material.getStatus().name()).append(",")
-              .append(material.isActive())
+              .append(material.isActive() && material.getStatus() != MaterialStatus.BAJA)
               .append("\n");
         }
         return sb.toString();

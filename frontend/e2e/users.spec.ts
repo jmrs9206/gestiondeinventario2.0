@@ -5,7 +5,7 @@ test.describe('Administración de Usuarios E2E', () => {
     // 1. Iniciar sesión como administrador
     await page.goto('/login');
     await page.fill('#email', 'admin@tuempresa.com');
-    await page.fill('#password', 'jmvzsDX1fbK78OnpMMm6');
+    await page.fill('#password', 'vd_admin_z2X4m7P1v9R8s3T5');
     await page.click('button[type="submit"]');
 
     // Debe estar en el dashboard

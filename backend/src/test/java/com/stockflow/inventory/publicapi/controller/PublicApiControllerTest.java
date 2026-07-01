@@ -215,7 +215,7 @@ class PublicApiControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.email").value("external_user@tuempresa.com"))
-                .andExpect(jsonPath("$.data.firstName").value("External"));
+                .andExpect(jsonPath("$.data.firstName").value("EXTERNAL"));
 
         // Verify user is in DB
         assertTrue(userRepository.findByEmail("external_user@tuempresa.com").isPresent());
