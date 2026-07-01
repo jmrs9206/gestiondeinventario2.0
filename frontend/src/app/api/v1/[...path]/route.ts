@@ -28,7 +28,7 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ pat
 async function proxyRequest(request: NextRequest, pathSegments: string[]) {
   // DB_HOST is set to 'mysql_db' inside Docker Compose network, otherwise use localhost
   const isDocker = process.env.DB_HOST === 'mysql_db';
-  const backendBase = isDocker ? 'http://backend:8080' : 'http://localhost:8080';
+  const backendBase = isDocker ? 'http://backend:8080' : 'http://127.0.0.1:8080';
   
   const path = pathSegments.join('/');
   const searchParams = request.nextUrl.search;

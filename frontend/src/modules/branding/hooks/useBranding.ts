@@ -108,7 +108,7 @@ export function useBranding() {
     async function loadBranding() {
       try {
         const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
-        const urlPath = isTestEnv ? 'http://localhost:8080/api/v1/branding' : '/api/v1/branding';
+        const urlPath = isTestEnv ? 'http://127.0.0.1:8080/api/v1/branding' : '/api/v1/branding';
         const data = await apiFetch<BrandingSettings>(urlPath);
         if (isMounted && data) {
           setBranding({
