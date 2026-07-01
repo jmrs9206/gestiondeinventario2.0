@@ -18,4 +18,12 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
+  webServer: {
+    command: 'npm run dev -- -p 3001',
+    url: 'http://localhost:3001',
+    reuseExistingServer: !process.env.CI,
+    stdout: 'ignore',
+    stderr: 'pipe',
+  },
 });
+
