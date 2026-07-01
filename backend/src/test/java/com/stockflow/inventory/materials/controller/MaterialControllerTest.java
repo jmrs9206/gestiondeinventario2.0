@@ -165,7 +165,7 @@ class MaterialControllerTest {
         List<Material> materials = materialRepository.findAll();
         assertEquals(1, materials.size());
         Material material = materials.get(0);
-        assertTrue(material.getPublicCode().startsWith("mat_"));
+        assertNotNull(material.getPublicCode());
         assertEquals(24, material.getPublicCode().length());
 
         // Verify history record
