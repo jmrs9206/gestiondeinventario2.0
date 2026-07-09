@@ -22,10 +22,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   Info,
-  Sliders,
-  Building2,
-  Wrench,
-  ClipboardList
+  Wrench
 } from 'lucide-react';
 import { useAuth } from '@/modules/auth/hooks/useAuth';
 

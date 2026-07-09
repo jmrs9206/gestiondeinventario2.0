@@ -47,8 +47,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run Lint
+        run: npm run lint
+
       - name: Run Tests
         run: npm run test
+
+      - name: Audit Production Dependencies
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Build Production Bundle
         run: npm run build
@@ -79,7 +85,7 @@ jobs:
         with:
           image-ref: 'stockflow-backend:latest'
           format: 'table'
-          exit-code: '0'
+          exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
@@ -99,7 +105,7 @@ jobs:
         with:
           image-ref: 'stockflow-frontend:latest'
           format: 'table'
-          exit-code: '0'
+          exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
@@ -117,6 +123,7 @@ jobs:
 
       - name: Start Database and Backend via Docker Compose
         run: |
+          docker compose down -v --remove-orphans
           docker compose up -d mysql_db backend
 
       - name: Set up Node.js
@@ -137,7 +144,7 @@ jobs:
       - name: Wait for Backend Health Check
         run: |
           echo "Waiting for backend on http://127.0.0.1:8080/api/v1/health to respond with UP..."
-          timeout 120s bash -c 'until curl -s http://127.0.0.1:8080/api/v1/health | grep -q "UP"; do echo -n "."; sleep 2; done'
+          timeout 120s bash -c 'until curl -fsS http://127.0.0.1:8080/api/v1/health | grep -q "UP"; do echo -n "."; sleep 2; done'
           echo -e "\nBackend is up!"
 
       - name: Build Frontend for E2E
@@ -158,4 +165,4 @@ jobs:
 
       - name: Stop Containers
         if: always()
-        run: docker compose down
+        run: docker compose down -v --remove-orphans
