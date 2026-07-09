@@ -10,6 +10,7 @@ import com.stockflow.inventory.users.entity.User;
 import com.stockflow.inventory.users.repository.UserRepository;
 import com.stockflow.inventory.mail.service.EmailService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +29,7 @@ public class UserService {
     private final AuditService auditService;
     private final EmailService emailService;
     private final ObjectMapper objectMapper;
+    private final String ownerEmail;
 
     public UserService(
             UserRepository userRepository,
@@ -35,7 +37,8 @@ public class UserService {
             PasswordEncoder passwordEncoder,
             AuditService auditService,
             EmailService emailService,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            @Value("${app.owner.email:${ADMIN_EMAIL:admin@tuempresa.com}}") String ownerEmail
     ) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
@@ -43,6 +46,7 @@ public class UserService {
         this.auditService = auditService;
         this.emailService = emailService;
         this.objectMapper = objectMapper;
+        this.ownerEmail = normalizeEmail(ownerEmail);
     }
 
     private String toJson(Object obj) {
@@ -66,6 +70,45 @@ public class UserService {
             return "";
         }
         return com.stockflow.inventory.common.utils.TextNormalizer.normalize(input).toLowerCase();
+    }
+
+    private boolean isOwnerAccount(User user) {
+        return user != null && user.getEmail() != null && user.getEmail().equalsIgnoreCase(ownerEmail);
+    }
+
+    private boolean isOwnerPerformer(User user, String performerPublicId) {
+        return isOwnerAccount(user) && user.getPublicId().equals(performerPublicId);
+    }
+
+    private void assertOwnerProfileMutationAllowed(User user, UserUpdateRequest request, String performerPublicId) {
+        if (!isOwnerAccount(user)) {
+            return;
+        }
+
+        if (!isOwnerPerformer(user, performerPublicId)) {
+            throw new ConflictException("La cuenta propietaria del sistema no puede ser modificada por otro usuario.");
+        }
+
+        String requestedEmail = normalizeEmail(request.getEmail());
+        if (!user.getEmail().equalsIgnoreCase(requestedEmail)) {
+            throw new ConflictException("El email de la cuenta propietaria del sistema no puede cambiarse desde el panel.");
+        }
+
+        if (request.getRole() != com.stockflow.inventory.users.entity.Role.ADMIN) {
+            throw new ConflictException("La cuenta propietaria del sistema no puede perder el rol ADMIN.");
+        }
+    }
+
+    private void assertOwnerStatusMutationAllowed(User user, UserStatusRequest request) {
+        if (isOwnerAccount(user) && Boolean.FALSE.equals(request.getActive())) {
+            throw new ConflictException("La cuenta propietaria del sistema no puede desactivarse.");
+        }
+    }
+
+    private void assertOwnerPasswordMutationAllowed(User user, String performerPublicId) {
+        if (isOwnerAccount(user) && !isOwnerPerformer(user, performerPublicId)) {
+            throw new ConflictException("La contraseña de la cuenta propietaria del sistema solo puede cambiarla el propio propietario.");
+        }
     }
 
     @Transactional
@@ -110,9 +153,7 @@ public class UserService {
         User user = userRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with public ID: " + publicId));
 
-        if (user.getEmail().equalsIgnoreCase("admin@tuempresa.com")) {
-            throw new ConflictException("No se permite modificar la cuenta del administrador principal del sistema.");
-        }
+        assertOwnerProfileMutationAllowed(user, request, performerPublicId);
 
         String normalizedEmail = normalizeEmail(request.getEmail());
         if (!user.getEmail().equalsIgnoreCase(normalizedEmail)) {
@@ -141,9 +182,7 @@ public class UserService {
         User user = userRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with public ID: " + publicId));
 
-        if (user.getEmail().equalsIgnoreCase("admin@tuempresa.com")) {
-            throw new ConflictException("No se permite desactivar la cuenta del administrador principal del sistema.");
-        }
+        assertOwnerStatusMutationAllowed(user, request);
 
         if (user.isActive() != request.getActive()) {
             String oldValueJson = toJson(new UserResponse(user));
@@ -175,9 +214,7 @@ public class UserService {
         User user = userRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with public ID: " + publicId));
 
-        if (user.getEmail().equalsIgnoreCase("admin@tuempresa.com")) {
-            throw new ConflictException("No se permite cambiar la contraseña del administrador principal del sistema desde el panel.");
-        }
+        assertOwnerPasswordMutationAllowed(user, performerPublicId);
 
         String oldValueJson = "{\"password\": \"[PROTECTED]\"}";
 

@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
@@ -84,8 +83,14 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isEmpty()) // Nulled out for security
+                .andExpect(jsonPath("$.accessToken").isEmpty())
+                .andExpect(jsonPath("$.refreshToken").isEmpty())
+                .andExpect(jsonPath("$.publicId").value(testUser.getPublicId()))
+                .andExpect(jsonPath("$.email").value("john.doe@tuempresa.com"))
+                .andExpect(jsonPath("$.role").value("TECNICO"))
+                .andExpect(cookie().exists("accessToken"))
+                .andExpect(cookie().httpOnly("accessToken", true))
+                .andExpect(cookie().secure("accessToken", true))
                 .andExpect(cookie().exists("refreshToken"))
                 .andExpect(cookie().httpOnly("refreshToken", true))
                 .andExpect(cookie().secure("refreshToken", true))
@@ -140,8 +145,10 @@ class AuthControllerTest {
                         .cookie(originalCookie)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isEmpty()) // Nulled out
+                .andExpect(jsonPath("$.accessToken").isEmpty())
+                .andExpect(jsonPath("$.refreshToken").isEmpty())
+                .andExpect(jsonPath("$.publicId").value(testUser.getPublicId()))
+                .andExpect(cookie().exists("accessToken"))
                 .andExpect(cookie().exists("refreshToken"))
                 .andReturn();
 
@@ -189,7 +196,8 @@ class AuthControllerTest {
                         .cookie(originalCookie)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(cookie().maxAge("refreshToken", 0)); // Cleared
+                .andExpect(cookie().maxAge("accessToken", 0))
+                .andExpect(cookie().maxAge("refreshToken", 0));
 
         // 3. Try to refresh using the revoked token (should fail)
         mockMvc.perform(post("/api/v1/auth/refresh")
@@ -208,13 +216,11 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String responseBody = loginResult.getResponse().getContentAsString();
-        String accessToken = objectMapper.readTree(responseBody).get("accessToken").asText();
+        jakarta.servlet.http.Cookie accessCookie = loginResult.getResponse().getCookie("accessToken");
+        assertNotNull(accessCookie);
 
-        // 2. Try to access a non-existent route, but authenticated
-        // Since we are authenticated, it should return 404 (Not Found) instead of 401 (Unauthorized)
         mockMvc.perform(get("/api/v1/some-secure-url-that-doesnt-exist")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                        .cookie(accessCookie))
                 .andExpect(status().isNotFound());
     }
 
@@ -243,23 +249,24 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String accessToken = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();
+        jakarta.servlet.http.Cookie accessCookie = loginResult.getResponse().getCookie("accessToken");
+        assertNotNull(accessCookie);
 
         // 1. Check access to /tecnico-only (allowed)
         mockMvc.perform(get("/api/v1/auth/tecnico-only")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                        .cookie(accessCookie))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Welcome Tecnico"));
 
         // 2. Check access to /authenticated (allowed)
         mockMvc.perform(get("/api/v1/auth/authenticated")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                        .cookie(accessCookie))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Welcome Authenticated"));
 
         // 3. Check access to /admin-only (forbidden)
         mockMvc.perform(get("/api/v1/auth/admin-only")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                        .cookie(accessCookie))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("Forbidden"));
 
@@ -296,23 +303,24 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String accessToken = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();
+        jakarta.servlet.http.Cookie accessCookie = loginResult.getResponse().getCookie("accessToken");
+        assertNotNull(accessCookie);
 
         // 1. Check access to /admin-only (allowed)
         mockMvc.perform(get("/api/v1/auth/admin-only")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                        .cookie(accessCookie))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Welcome Admin"));
 
         // 2. Check access to /authenticated (allowed)
         mockMvc.perform(get("/api/v1/auth/authenticated")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                        .cookie(accessCookie))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Welcome Authenticated"));
 
         // 3. Check access to /tecnico-only (forbidden)
         mockMvc.perform(get("/api/v1/auth/tecnico-only")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                        .cookie(accessCookie))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("Forbidden"));
 

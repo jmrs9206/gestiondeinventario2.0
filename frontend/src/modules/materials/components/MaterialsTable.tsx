@@ -376,7 +376,7 @@ export default function MaterialsTable() {
       }
 
       try {
-        const res = await importMaterials(file);
+        await importMaterials(file);
         showToast('Importación masiva completada con éxito.');
         loadMaterials();
       } catch (err: unknown) {
