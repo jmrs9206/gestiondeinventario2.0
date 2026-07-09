@@ -91,6 +91,8 @@ jobs:
           severity: 'CRITICAL,HIGH'
           db-repository: 'public.ecr.aws/aquasecurity/trivy-db:2'
           java-db-repository: 'public.ecr.aws/aquasecurity/trivy-java-db:1'
+          token-setup-trivy: ${{ secrets.GITHUB_TOKEN }}
+          cache: false
 
       - name: Build Frontend Docker Image
         uses: docker/build-push-action@v5
@@ -112,6 +114,8 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           db-repository: 'public.ecr.aws/aquasecurity/trivy-db:2'
+          token-setup-trivy: ${{ secrets.GITHUB_TOKEN }}
+          cache: false
 
   e2e-tests:
     name: Playwright E2E Tests
