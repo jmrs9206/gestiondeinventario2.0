@@ -3,6 +3,8 @@ spring:
     name: inventory
   profiles:
     active: dev
+  jpa:
+    open-in-view: false
   mail:
     host: ${SMTP_HOST:smtp.gmail.com}
     port: ${SMTP_PORT:587}
@@ -23,6 +25,17 @@ jwt:
   secret: ${JWT_SECRET}
 
 app:
+  owner:
+    email: ${OWNER_EMAIL:${ADMIN_EMAIL:admin@tuempresa.com}}
+  mail:
+    from: ${MAIL_FROM:${SMTP_USERNAME:noreply@tuempresa.com}}
+    imap:
+      enabled: ${IMAP_ENABLED:true}
+      host: ${IMAP_HOST:imap.gmail.com}
+      port: ${IMAP_PORT:993}
+      username: ${IMAP_USERNAME:${SMTP_USERNAME:noreply@tuempresa.com}}
+      password: ${IMAP_PASSWORD:${SMTP_PASSWORD:change_me}}
+      ssl-enabled: ${IMAP_SSL_ENABLED:true}
   frontend-url: ${APP_FRONTEND_URL:http://localhost:3000}
   branding:
     app-name: ${BRANDING_APP_NAME:GESTION DE INVENTARIO}
@@ -56,4 +69,4 @@ management:
         include: health, info
   endpoint:
     health:
-      show-details: always
+      show-details: never

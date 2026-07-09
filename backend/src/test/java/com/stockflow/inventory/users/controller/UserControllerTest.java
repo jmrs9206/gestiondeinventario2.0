@@ -5,6 +5,7 @@ import com.stockflow.inventory.audit.service.AuditService;
 import com.stockflow.inventory.auth.entity.RefreshToken;
 import com.stockflow.inventory.auth.repository.RefreshTokenRepository;
 import com.stockflow.inventory.auth.service.JwtService;
+import com.stockflow.inventory.mail.service.EmailService;
 import com.stockflow.inventory.users.dto.*;
 import com.stockflow.inventory.users.entity.Role;
 import com.stockflow.inventory.users.entity.User;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -56,6 +58,9 @@ class UserControllerTest {
 
     @SpyBean
     private AuditService auditService;
+
+    @MockBean
+    private EmailService emailService;
 
     private User adminUser;
     private User tecnicoUser;
@@ -232,6 +237,98 @@ class UserControllerTest {
                 any(),
                 any()
         );
+    }
+
+    @Test
+    void anotherAdminCannotModifyOwnerAccount() throws Exception {
+        User otherAdmin = new User(
+                UUID.randomUUID().toString(),
+                "Other",
+                "Admin",
+                "other.admin@tuempresa.com",
+                passwordEncoder.encode("OtherAdminPassword123"),
+                Role.ADMIN
+        );
+        otherAdmin.setActive(true);
+        otherAdmin = userRepository.save(otherAdmin);
+        String otherAdminToken = jwtService.generateToken(otherAdmin.getEmail(), otherAdmin.getPublicId(), Role.ADMIN.name());
+
+        UserUpdateRequest request = new UserUpdateRequest();
+        request.setFirstName("Compromised");
+        request.setLastName("Owner");
+        request.setEmail("attacker@tuempresa.com");
+        request.setRole(Role.TECNICO);
+
+        mockMvc.perform(put("/api/v1/users/" + adminUser.getPublicId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + otherAdminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_CONFLICT"));
+
+        User owner = userRepository.findByPublicId(adminUser.getPublicId()).orElseThrow();
+        assertEquals("admin@tuempresa.com", owner.getEmail());
+        assertEquals(Role.ADMIN, owner.getRole());
+        assertTrue(owner.isActive());
+    }
+
+    @Test
+    void ownerCannotBeDeactivated() throws Exception {
+        UserStatusRequest request = new UserStatusRequest();
+        request.setActive(false);
+
+        mockMvc.perform(patch("/api/v1/users/" + adminUser.getPublicId() + "/status")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_CONFLICT"));
+
+        User owner = userRepository.findByPublicId(adminUser.getPublicId()).orElseThrow();
+        assertTrue(owner.isActive());
+    }
+
+    @Test
+    void anotherAdminCannotChangeOwnerPassword() throws Exception {
+        User otherAdmin = new User(
+                UUID.randomUUID().toString(),
+                "Other",
+                "Admin",
+                "other.admin@tuempresa.com",
+                passwordEncoder.encode("OtherAdminPassword123"),
+                Role.ADMIN
+        );
+        otherAdmin.setActive(true);
+        otherAdmin = userRepository.save(otherAdmin);
+        String otherAdminToken = jwtService.generateToken(otherAdmin.getEmail(), otherAdmin.getPublicId(), Role.ADMIN.name());
+
+        UserPasswordRequest request = new UserPasswordRequest();
+        request.setPassword("CompromisedPassword123");
+
+        mockMvc.perform(put("/api/v1/users/" + adminUser.getPublicId() + "/password")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + otherAdminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_CONFLICT"));
+
+        User owner = userRepository.findByPublicId(adminUser.getPublicId()).orElseThrow();
+        assertFalse(passwordEncoder.matches("CompromisedPassword123", owner.getPasswordHash()));
+    }
+
+    @Test
+    void ownerCanChangeOwnPassword() throws Exception {
+        UserPasswordRequest request = new UserPasswordRequest();
+        request.setPassword("OwnerNewSecurePassword123");
+
+        mockMvc.perform(put("/api/v1/users/" + adminUser.getPublicId() + "/password")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        User owner = userRepository.findByPublicId(adminUser.getPublicId()).orElseThrow();
+        assertTrue(passwordEncoder.matches("OwnerNewSecurePassword123", owner.getPasswordHash()));
     }
 
     @Test

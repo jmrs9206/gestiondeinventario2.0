@@ -18,7 +18,6 @@ import {
   User as UserIcon,
   ChevronLeft,
   ChevronRight,
-  Settings,
   Shield
 } from 'lucide-react';
 

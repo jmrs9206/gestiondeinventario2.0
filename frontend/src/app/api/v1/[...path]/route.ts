@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+type ProxyBody = Blob | null;
+
 export async function GET(request: NextRequest, props: { params: Promise<{ path: string[] }> }) {
   const params = await props.params;
   return proxyRequest(request, params.path);
@@ -26,9 +28,7 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ pat
 }
 
 async function proxyRequest(request: NextRequest, pathSegments: string[]) {
-  // DB_HOST is set to 'mysql_db' inside Docker Compose network, otherwise use localhost
-  const isDocker = process.env.DB_HOST === 'mysql_db';
-  const backendBase = isDocker ? 'http://backend:8080' : 'http://127.0.0.1:8080';
+  const backendBase = process.env.BACKEND_URL || 'http://127.0.0.1:8080';
   
   const path = pathSegments.join('/');
   const searchParams = request.nextUrl.search;
@@ -38,7 +38,14 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]) {
   // Remove host header to avoid issues with target server host verification
   headers.delete('host');
 
-  let body: any = null;
+  if (!headers.has('Authorization')) {
+    const accessToken = request.cookies.get('accessToken')?.value;
+    if (accessToken) {
+      headers.set('Authorization', `Bearer ${accessToken}`);
+    }
+  }
+
+  let body: ProxyBody = null;
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     try {
       body = await request.blob();
@@ -64,8 +71,9 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]) {
       statusText: response.statusText,
       headers: responseHeaders,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown proxy error';
     console.error(`Failed to proxy to ${url}:`, error);
-    return NextResponse.json({ error: { message: `Proxy failed: ${error.message}` } }, { status: 502 });
+    return NextResponse.json({ error: { message: `Proxy failed: ${message}` } }, { status: 502 });
   }
 }
