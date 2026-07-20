@@ -26,6 +26,11 @@ Se ha completado la implementación de las siguientes funcionalidades clave en B
 - **Backend:** [UserService.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/users/service/UserService.java) y [EmailService.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/mail/service/EmailService.java) con endpoints de reenvío de invitaciones y emails HTML formateados.
 - **Frontend:** [UsersTable.tsx](file:///home/jmrs/gestionDeInventario2.0/frontend/src/modules/materials/components/UsersTable.tsx) y [user.service.ts](file:///home/jmrs/gestionDeInventario2.0/frontend/src/modules/materials/services/user.service.ts) actualizados.
 
+### 3. Adaptabilidad y Diseño 100% Responsive (Mobile-First)
+- **Navegación Móvil ([Navigation.tsx](file:///home/jmrs/gestionDeInventario2.0/frontend/src/modules/materials/components/Navigation.tsx)):** Menú desplegable lateral (*drawer*) con ancho dinámico `w-72 max-w-[85vw]` para garantizar legibilidad perfecta en smartphones sin compresión no deseada.
+- **Botones y Tablas ([MaterialsTable.tsx](file:///home/jmrs/gestionDeInventario2.0/frontend/src/modules/materials/components/MaterialsTable.tsx)):** Grid adaptativo en pantallas móviles para la barra de herramientas y filtros.
+- **Dashboard ([page.tsx](file:///home/jmrs/gestionDeInventario2.0/frontend/src/app/dashboard/page.tsx)):** Relleno dinámico `p-4 sm:p-6 md:p-8` y cuadrícula adaptable de KPIs e incidentes para pantallas de 320px a 4K.
+
 ---
 
 ## 🚀 Pasos para reanudar cuando digas "continuar donde lo dejaste":
