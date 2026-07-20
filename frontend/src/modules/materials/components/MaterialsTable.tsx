@@ -551,7 +551,7 @@ export default function MaterialsTable() {
   ]));
 
   return (
-    <div className="flex-1 bg-background p-6 md:p-8 space-y-6 relative animate-fade-in">
+    <div className="flex-1 bg-background p-4 sm:p-6 md:p-8 space-y-6 relative animate-fade-in">
       {/* Toast Notification Banner */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border backdrop-blur-md transition-all duration-300 ${
@@ -570,7 +570,7 @@ export default function MaterialsTable() {
           <h1 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 font-display">Inventario de Materiales</h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 font-sans">Busca, filtra, edita o registra nuevos equipos en el sistema.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
           <button
             onClick={handleOpenScanner}
             className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-xs font-bold text-zinc-700 dark:text-zinc-200 px-4 py-2.5 transition-all hover:scale-[1.02] hover-lift font-display"

@@ -134,7 +134,7 @@ export default function Navigation({ children }: NavigationProps) {
       <aside
         className={`${
           mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
-        } md:translate-x-0 fixed inset-y-0 left-0 ${
+        } md:translate-x-0 fixed inset-y-0 left-0 w-72 max-w-[85vw] ${
           isCollapsed ? 'md:w-24' : 'md:w-72'
         } bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-r border-zinc-200/80 dark:border-zinc-800/80 p-4 flex flex-col transition-[width,transform,box-shadow] duration-300 ease-in-out z-40 md:sticky md:h-screen`}
       >
