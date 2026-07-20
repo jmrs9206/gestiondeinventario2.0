@@ -77,6 +77,7 @@ public class MaterialService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = com.stockflow.inventory.config.cache.CacheConfig.DASHBOARD_KPIS_CACHE, allEntries = true)
     public MaterialResponse createMaterial(MaterialRequest request, String performerPublicId, String ip, String userAgent) {
         Office office = officeRepository.findByPublicId(request.getOfficePublicId())
                 .filter(Office::isActive)
@@ -127,6 +128,7 @@ public class MaterialService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = com.stockflow.inventory.config.cache.CacheConfig.DASHBOARD_KPIS_CACHE, allEntries = true)
     public MaterialResponse updateMaterial(String publicCode, MaterialRequest request, String performerPublicId, String ip, String userAgent) {
         Material material = materialRepository.findByPublicCode(publicCode)
                 .filter(Material::isActive)
@@ -195,6 +197,7 @@ public class MaterialService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = com.stockflow.inventory.config.cache.CacheConfig.DASHBOARD_KPIS_CACHE, allEntries = true)
     public MaterialResponse decommissionMaterial(String publicCode, String comment, String performerPublicId, String ip, String userAgent) {
         Material material = materialRepository.findByPublicCode(publicCode)
                 .filter(Material::isActive)
@@ -281,6 +284,7 @@ public class MaterialService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = com.stockflow.inventory.config.cache.CacheConfig.DASHBOARD_KPIS_CACHE, allEntries = true)
     public MaterialResponse reactivateMaterial(String publicCode, String comment, String performerPublicId, String ip, String userAgent) {
         Material material = materialRepository.findByPublicCode(publicCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Material not found with public code: " + publicCode));

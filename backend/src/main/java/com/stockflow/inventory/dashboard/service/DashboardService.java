@@ -39,6 +39,7 @@ public class DashboardService {
     }
 
     @Transactional(readOnly = true)
+    @org.springframework.cache.annotation.Cacheable(value = com.stockflow.inventory.config.cache.CacheConfig.DASHBOARD_KPIS_CACHE, key = "'default'")
     public DashboardKpisResponse getKpis() {
         // 1. Fetch all materials
         List<Material> allMaterials = materialRepository.findAll();
