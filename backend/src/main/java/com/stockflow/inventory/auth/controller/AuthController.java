@@ -2,6 +2,8 @@ package com.stockflow.inventory.auth.controller;
 
 import com.stockflow.inventory.auth.dto.*;
 import com.stockflow.inventory.auth.service.AuthService;
+import com.stockflow.inventory.auth.service.JwtService;
+import com.stockflow.inventory.users.entity.User;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,11 +12,15 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -22,16 +28,10 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
-    private final com.stockflow.inventory.auth.service.TokenBlacklistService tokenBlacklistService;
-    private final com.stockflow.inventory.auth.service.JwtService jwtService;
+    private final JwtService jwtService;
 
-    public AuthController(
-            AuthService authService,
-            com.stockflow.inventory.auth.service.TokenBlacklistService tokenBlacklistService,
-            com.stockflow.inventory.auth.service.JwtService jwtService
-    ) {
+    public AuthController(AuthService authService, JwtService jwtService) {
         this.authService = authService;
-        this.tokenBlacklistService = tokenBlacklistService;
         this.jwtService = jwtService;
     }
 
@@ -45,11 +45,14 @@ public class AuthController {
         String userAgent = request.getHeader("User-Agent");
         LoginResponse loginResponse = authService.login(loginRequest.getEmail(), loginRequest.getPassword(), ip, userAgent);
         
-        String token = loginResponse.getRefreshToken();
-        // Remove token from JSON body for 10/10 security (XSS protection)
+        String accessToken = loginResponse.getAccessToken();
+        String refreshToken = loginResponse.getRefreshToken();
+        populateSessionFromAccessToken(loginResponse, accessToken);
         loginResponse.setRefreshToken(null);
+        loginResponse.setAccessToken(null);
         
-        setRefreshTokenCookie(response, token, 7 * 24 * 60 * 60);
+        setAccessTokenCookie(response, accessToken, loginResponse.getExpiresIn());
+        setRefreshTokenCookie(response, refreshToken, 7 * 24 * 60 * 60);
         
         return ResponseEntity.ok(loginResponse);
     }
@@ -76,13 +79,31 @@ public class AuthController {
         
         LoginResponse loginResponse = authService.refresh(token, ip, userAgent);
         
-        String newToken = loginResponse.getRefreshToken();
-        // Remove token from JSON body for 10/10 security (XSS protection)
+        String newAccessToken = loginResponse.getAccessToken();
+        String newRefreshToken = loginResponse.getRefreshToken();
+        populateSessionFromAccessToken(loginResponse, newAccessToken);
         loginResponse.setRefreshToken(null);
+        loginResponse.setAccessToken(null);
         
-        setRefreshTokenCookie(response, newToken, 7 * 24 * 60 * 60);
+        setAccessTokenCookie(response, newAccessToken, loginResponse.getExpiresIn());
+        setRefreshTokenCookie(response, newRefreshToken, 7 * 24 * 60 * 60);
         
         return ResponseEntity.ok(loginResponse);
+    }
+
+    @GetMapping("/session")
+    public ResponseEntity<LoginResponse> session(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new BadCredentialsException("Session is missing");
+        }
+
+        LoginResponse response = new LoginResponse();
+        response.setPublicId(user.getPublicId());
+        response.setEmail(user.getEmail());
+        response.setRole(user.getRole().name());
+        response.setMustChangePassword(user.isMustChangePassword());
+        response.setPermissions(extractPermissions(authentication));
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/logout")
@@ -113,6 +134,7 @@ public class AuthController {
             tokenBlacklistService.blacklistToken(accessToken, expTime);
         }
         
+        clearAccessTokenCookie(response);
         clearRefreshTokenCookie(response);
         
         return ResponseEntity.ok().build();
@@ -177,6 +199,28 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
+    private void setAccessTokenCookie(HttpServletResponse response, String token, long maxAgeSeconds) {
+        ResponseCookie cookie = ResponseCookie.from("accessToken", token)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(maxAgeSeconds)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private void clearAccessTokenCookie(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from("accessToken", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(0)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
     private void clearRefreshTokenCookie(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
@@ -186,6 +230,24 @@ public class AuthController {
                 .maxAge(0)
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private void populateSessionFromAccessToken(LoginResponse response, String accessToken) {
+        response.setPublicId(jwtService.extractPublicId(accessToken));
+        response.setEmail(jwtService.extractEmail(accessToken));
+        response.setRole(jwtService.extractRole(accessToken));
+        response.setPermissions(jwtService.extractPermissions(accessToken));
+    }
+
+    private List<String> extractPermissions(Authentication authentication) {
+        List<String> permissions = new ArrayList<>();
+        for (GrantedAuthority authority : authentication.getAuthorities()) {
+            String value = authority.getAuthority();
+            if (!value.startsWith("ROLE_")) {
+                permissions.add(value);
+            }
+        }
+        return permissions;
     }
 
     private String getCookieValue(HttpServletRequest request, String name) {

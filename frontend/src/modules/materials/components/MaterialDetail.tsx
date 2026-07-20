@@ -9,6 +9,7 @@ import {
   MaterialResponse,
   MaterialHistoryResponse
 } from '../services/material.service';
+import { authenticatedFetch } from '@/services/api-client';
 import {
   ArrowLeft,
   QrCode,
@@ -38,8 +39,6 @@ export default function MaterialDetail({ publicCode }: MaterialDetailProps) {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  const BASE_URL = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080');
 
   const isMountedRef = useRef(true);
 
@@ -95,12 +94,7 @@ export default function MaterialDetail({ publicCode }: MaterialDetailProps) {
     setActionLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('accessToken');
-      const res = await fetch(`${BASE_URL}/api/v1/materials/${publicCode}/qr/print`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const res = await authenticatedFetch(`/api/v1/materials/${publicCode}/qr/print`);
       if (!res.ok) {
         throw new Error('No se pudo descargar la etiqueta de impresión.');
       }
@@ -153,11 +147,7 @@ export default function MaterialDetail({ publicCode }: MaterialDetailProps) {
   const loadQrImage = useCallback(async (signal?: AbortSignal) => {
     if (!material) return;
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(`${BASE_URL}/api/v1/materials/${publicCode}/qr?width=300&height=300`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+      const response = await authenticatedFetch(`/api/v1/materials/${publicCode}/qr?width=300&height=300`, {
         signal
       });
       if (response.ok) {
@@ -176,7 +166,7 @@ export default function MaterialDetail({ publicCode }: MaterialDetailProps) {
     } catch {
       // Ignore QR load failures
     }
-  }, [material, publicCode, BASE_URL]);
+  }, [material, publicCode]);
 
   useEffect(() => {
     const controller = new AbortController();

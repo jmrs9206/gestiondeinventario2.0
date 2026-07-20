@@ -16,6 +16,8 @@ import {
   Menu,
   X,
   User as UserIcon,
+  ChevronLeft,
+  ChevronRight,
   Shield
 } from 'lucide-react';
 

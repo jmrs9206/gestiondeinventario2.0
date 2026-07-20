@@ -47,7 +47,15 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, refreshTokenRepository, passwordEncoder, auditService, emailService, new ObjectMapper());
+        userService = new UserService(
+                userRepository,
+                refreshTokenRepository,
+                passwordEncoder,
+                auditService,
+                emailService,
+                new ObjectMapper(),
+                "admin@tuempresa.com"
+        );
     }
 
     @Test

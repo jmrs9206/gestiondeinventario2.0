@@ -37,19 +37,6 @@ function DashboardPageContent() {
     setLoading(true);
     setError(null);
     try {
-      // In local development, the user might need to log in first.
-      // We will read the token, and if missing, we can redirect or show an error.
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        if (!isMountedRef.current) return;
-        // Set a placeholder token for local testing if not running the full app flow yet,
-        // or prompt the user. For robustness, if we get an Unauthorized error,
-        // it redirects to login. Let's raise the error directly.
-        setError('Acceso denegado. Por favor, inicia sesión como administrador.');
-        setLoading(false);
-        return;
-      }
-
       const [kpisData, movementsData] = await Promise.all([
         fetchDashboardKpis(),
         fetchRecentMovements(10),

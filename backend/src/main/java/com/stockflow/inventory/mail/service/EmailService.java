@@ -21,7 +21,7 @@ public class EmailService {
     public EmailService(
             JavaMailSender mailSender,
             @Value("${app.frontend-url}") String frontendUrl,
-            @Value("${spring.mail.username}") String fromEmail
+            @Value("${app.mail.from}") String fromEmail
     ) {
         this.mailSender = mailSender;
         this.frontendUrl = frontendUrl;
@@ -49,6 +49,13 @@ public class EmailService {
     }
 
     private String buildCredentialsHtml(String firstName, String lastName, String email, String password) {
+        String safeFirstName = escapeHtml(firstName);
+        String safeLastName = escapeHtml(lastName);
+        String safeEmail = escapeHtml(email);
+        String safePassword = escapeHtml(password);
+        String safeFrontendUrl = escapeHtml(frontendUrl);
+        String safeFrontendLoginUrl = escapeHtml(frontendUrl + "/login");
+
         return "<!DOCTYPE html>" +
                 "<html>" +
                 "<head>" +
@@ -73,15 +80,15 @@ public class EmailService {
                 "    <div class='header'>" +
                 "      <div class='logo'>GESTION DE INVENTARIO</div>" +
                 "    </div>" +
-                "    <h2 class='title'>¡Hola, " + firstName + " " + lastName + "!</h2>" +
-                "    <p>Se ha creado tu cuenta de acceso para la aplicación de <strong>GESTION DE INVENTARIO</strong>. A continuación encontrarás tus credenciales de acceso:</p>" +
+                "    <h2 class='title'>¡Hola, " + safeFirstName + " " + safeLastName + "!</h2>" +
+                "    <p>Se ha creado tu cuenta de acceso para la aplicación de <strong>Gestión de Inventario de StockFlow</strong>. A continuación encontrarás tus credenciales de acceso:</p>" +
                 "    <div class='credentials-box'>" +
-                "      <div class='field'><span class='label'>Enlace de Acceso:</span> <span class='value'><a href='" + frontendUrl + "' style='color: #2563eb; text-decoration: none;'>" + frontendUrl + "</a></span></div>" +
-                "      <div class='field'><span class='label'>Usuario (Email):</span> <span class='value'>" + email + "</span></div>" +
-                "      <div class='field'><span class='label'>Contraseña:</span> <span class='value'>" + password + "</span></div>" +
+                "      <div class='field'><span class='label'>Enlace de Acceso:</span> <span class='value'><a href='" + safeFrontendUrl + "' style='color: #2563eb; text-decoration: none;'>" + safeFrontendUrl + "</a></span></div>" +
+                "      <div class='field'><span class='label'>Usuario (Email):</span> <span class='value'>" + safeEmail + "</span></div>" +
+                "      <div class='field'><span class='label'>Contraseña:</span> <span class='value'>" + safePassword + "</span></div>" +
                 "    </div>" +
                 "    <p>Por seguridad, te recomendamos cambiar la contraseña una vez ingreses a la plataforma.</p>" +
-                "    <a href='" + frontendUrl + "/login' class='btn'>Acceder a la Aplicación</a>" +
+                "    <a href='" + safeFrontendLoginUrl + "' class='btn'>Acceder a la Aplicación</a>" +
                 "    <div class='footer'>" +
                 "      Este es un correo automático, por favor no respondas a este mensaje.<br>" +
                 "      &copy; " + java.time.Year.now().getValue() + " GESTION DE INVENTARIO. Todos los derechos reservados." +
@@ -113,7 +120,11 @@ public class EmailService {
     }
 
     private String buildInvitationHtml(String firstName, String lastName, String email, String token) {
-        String invitationUrl = frontendUrl + "/login?invitationToken=" + token + "&email=" + email;
+        String invitationUrl = frontendUrl + "/login?invitationToken=" + encodeUrlParam(token) + "&email=" + encodeUrlParam(email);
+        String safeFirstName = escapeHtml(firstName);
+        String safeLastName = escapeHtml(lastName);
+        String safeInvitationUrl = escapeHtml(invitationUrl);
+
         return "<!DOCTYPE html>" +
                 "<html>" +
                 "<head>" +
@@ -135,15 +146,15 @@ public class EmailService {
                 "    <div class='header'>" +
                 "      <div class='logo'>GESTION DE INVENTARIO</div>" +
                 "    </div>" +
-                "    <h2 class='title'>¡Hola, " + firstName + " " + lastName + "!</h2>" +
-                "    <p>Has sido invitado a formar parte de la aplicación de <strong>GESTION DE INVENTARIO</strong>.</p>" +
+                "    <h2 class='title'>¡Hola, " + safeFirstName + " " + safeLastName + "!</h2>" +
+                "    <p>Has sido invitado a formar parte de la aplicación de <strong>Gestión de Inventario de StockFlow</strong>.</p>" +
                 "    <p>Para activar tu cuenta y configurar tu contraseña de acceso, haz clic en el siguiente botón:</p>" +
                 "    <div style='text-align: center;'>" +
-                "      <a href='" + invitationUrl + "' class='btn'>Establecer Contraseña y Activar Cuenta</a>" +
+                "      <a href='" + safeInvitationUrl + "' class='btn'>Establecer Contraseña y Activar Cuenta</a>" +
                 "    </div>" +
                 "    <div class='info-box'>" +
                 "      Si el botón de arriba no funciona, puedes copiar y pegar el siguiente enlace en tu navegador:<br>" +
-                "      <a href='" + invitationUrl + "' style='color: #2563eb; word-break: break-all;'>" + invitationUrl + "</a>" +
+                "      <a href='" + safeInvitationUrl + "' style='color: #2563eb; word-break: break-all;'>" + safeInvitationUrl + "</a>" +
                 "    </div>" +
                 "    <p>Esta invitación tiene una validez de 7 días.</p>" +
                 "    <div class='footer'>" +
@@ -153,5 +164,21 @@ public class EmailService {
                 "  </div>" +
                 "</body>" +
                 "</html>";
+    }
+
+    String escapeHtml(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
+    }
+
+    String encodeUrlParam(String value) {
+        return java.net.URLEncoder.encode(value == null ? "" : value, java.nio.charset.StandardCharsets.UTF_8);
     }
 }

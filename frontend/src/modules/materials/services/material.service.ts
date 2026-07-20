@@ -1,4 +1,4 @@
-import { apiFetch } from '@/services/api-client';
+import { apiFetch, authenticatedFetch } from '@/services/api-client';
 
 export interface MaterialResponse {
   publicCode: string;
@@ -132,15 +132,7 @@ export async function importMaterials(file: File): Promise<string> {
 }
 
 export async function exportMaterials(): Promise<void> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  const headers = new Headers();
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-  const BASE_URL = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080');
-  const response = await fetch(`${BASE_URL}/api/v1/materials/export`, {
-    headers,
-  });
+  const response = await authenticatedFetch('/api/v1/materials/export');
   if (!response.ok) {
     throw new Error('Error al exportar materiales');
   }

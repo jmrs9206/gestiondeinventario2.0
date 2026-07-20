@@ -8,7 +8,9 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.function.Function;
 
 @Service
@@ -97,6 +99,20 @@ public class JwtService {
 
     public String extractRole(String token) {
         return extractClaim(token, claims -> claims.get("role", String.class));
+    }
+
+    public List<String> extractPermissions(String token) {
+        List<?> rawPermissions = extractClaim(token, claims -> claims.get("permissions", List.class));
+        List<String> permissions = new ArrayList<>();
+        if (rawPermissions == null) {
+            return permissions;
+        }
+        for (Object permission : rawPermissions) {
+            if (permission instanceof String value) {
+                permissions.add(value);
+            }
+        }
+        return permissions;
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
