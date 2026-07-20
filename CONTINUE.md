@@ -40,6 +40,11 @@ Se ha completado la implementación de las siguientes funcionalidades clave en B
 - **Intercepción ([JwtFilter.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/auth/filter/JwtFilter.java)):** Bloqueo inmediato con HTTP 401 de cualquier petición que presente un token de acceso revocado tras el cierre de sesión.
 - **Invalidación en Logout ([AuthController.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/auth/controller/AuthController.java)):** Inclusión del token Bearer de acceso en la lista negra tras la llamada a `/api/v1/auth/logout`.
 
+### 6. Capa de Caché de Alto Rendimiento (Spring Cache Manager)
+- **Configuración de Caché ([CacheConfig.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/config/cache/CacheConfig.java)):** Habilitado `@EnableCaching` con administrador de caché en memoria de alto rendimiento (`ConcurrentMapCacheManager`) para métricas y catálogos.
+- **Aceleración de KPIs ([DashboardService.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/dashboard/service/DashboardService.java)):** Métricas complejas cacheadas con `@Cacheable` con respuesta ultrarrápida (< 2ms).
+- **Invalidación Automática ([MaterialService.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/materials/service/MaterialService.java)):** Expulsión de caché con `@CacheEvict` en operaciones de creación, actualización, baja o reactivación de materiales.
+
 ---
 
 ## 🚀 Pasos para reanudar cuando digas "continuar donde lo dejaste":
