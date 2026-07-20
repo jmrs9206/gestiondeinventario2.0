@@ -45,6 +45,14 @@ Se ha completado la implementación de las siguientes funcionalidades clave en B
 - **Aceleración de KPIs ([DashboardService.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/dashboard/service/DashboardService.java)):** Métricas complejas cacheadas con `@Cacheable` con respuesta ultrarrápida (< 2ms).
 - **Invalidación Automática ([MaterialService.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/materials/service/MaterialService.java)):** Expulsión de caché con `@CacheEvict` en operaciones de creación, actualización, baja o reactivación de materiales.
 
+### 7. Auditoría de Seguridad & Simulación Automatizada de Ataques (Penetration Test)
+- **Suite de Pruebas de Penetración ([SecurityPenetrationTest.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/test/java/com/stockflow/inventory/security/SecurityPenetrationTest.java)):** Ejecutadas y verificadas 5 pruebas de penetración automatizadas:
+  1. *Ataque de Inyección SQL (Base de Datos):* Mitigado. Parámetros escapados y seguros en capas JPA/Hibernate.
+  2. *Ataque de Inyección XSS (Frontend/API):* Mitigado. Sanitización estricta mediante `TextNormalizer` y cabeceras de seguridad CSP.
+  3. *Ataque de Falsificación de Token JWT:* Mitigado. Rechazado con 401 Unauthorized por firma no válida.
+  4. *Ataque de Escalado de Privilegios:* Mitigado. Bloqueado con 403 Forbidden mediante reglas de `@PreAuthorize`.
+  5. *Ataque de Path Traversal (Acceso a Archivos):* Mitigado. Rechazado con 400 Bad Request por el contenedor Servlet.
+
 ---
 
 ## 🚀 Pasos para reanudar cuando digas "continuar donde lo dejaste":
