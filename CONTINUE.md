@@ -53,6 +53,9 @@ Se ha completado la implementación de las siguientes funcionalidades clave en B
   4. *Ataque de Escalado de Privilegios:* Mitigado. Bloqueado con 403 Forbidden mediante reglas de `@PreAuthorize`.
   5. *Ataque de Path Traversal (Acceso a Archivos):* Mitigado. Rechazado con 400 Bad Request por el contenedor Servlet.
 
+### 8. Corrección de Pipeline CI/CD (Backend GitHub Actions)
+- **Corrección de Variable de Entorno JWT_SECRET:** Añadido valor por defecto (*fallback*) en [application.yml](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/resources/application.yml) e inyectada la variable `JWT_SECRET` en el paso de compilación `backend-ci` de [.github/workflows/ci.yml](file:///home/jmrs/gestionDeInventario2.0/.github/workflows/ci.yml) para evitar errores de inicio de contexto en runners sin variables exportadas.
+
 ---
 
 ## 🚀 Pasos para reanudar cuando digas "continuar donde lo dejaste":
