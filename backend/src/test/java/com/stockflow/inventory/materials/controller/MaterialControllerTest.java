@@ -239,6 +239,7 @@ class MaterialControllerTest {
         request.setMaterialType("Router");
         request.setOfficePublicId("non-existent-office-uuid");
         request.setStatus(MaterialStatus.OPERATIVO);
+        request.setComment("Valid comment");
 
         mockMvc.perform(post("/api/v1/materials")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)

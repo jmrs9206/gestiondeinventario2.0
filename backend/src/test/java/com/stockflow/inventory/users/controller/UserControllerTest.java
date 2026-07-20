@@ -17,6 +17,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import com.stockflow.inventory.mail.service.EmailService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -383,6 +385,32 @@ class UserControllerTest {
                 eq("User"),
                 eq(tecnicoUser.getPublicId()),
                 eq("PASSWORD_CHANGED"),
+                eq("USER"),
+                eq(adminUser.getPublicId()),
+                any(),
+                any(),
+                any(),
+                any()
+        );
+    }
+
+    @Test
+    void sendPasswordResetEmailSuccessfully() throws Exception {
+        mockMvc.perform(post("/api/v1/users/" + tecnicoUser.getPublicId() + "/password-reset")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isOk());
+
+        verify(emailService, times(1)).sendInvitationEmail(
+                eq(tecnicoUser.getEmail()),
+                eq(tecnicoUser.getFirstName()),
+                eq(tecnicoUser.getLastName()),
+                anyString()
+        );
+
+        verify(auditService, times(1)).logEvent(
+                eq("User"),
+                eq(tecnicoUser.getPublicId()),
+                eq("PASSWORD_RESET_REQUESTED"),
                 eq("USER"),
                 eq(adminUser.getPublicId()),
                 any(),

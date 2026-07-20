@@ -1,5 +1,6 @@
 package com.stockflow.inventory.dashboard.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -18,10 +19,17 @@ public class DashboardKpisResponse {
     private long leftoverHeadphones;
     private Map<String, Long> materialTypeCounts;
 
+    // New professional KPIs
+    private BigDecimal totalAcquisitionCost;
+    private BigDecimal totalCurrentValue;
+    private BigDecimal totalDepreciation;
+    private List<String> systemAlerts;
+    private Map<String, BigDecimal> officeCosts;
+
     public DashboardKpisResponse() {
     }
 
-    public DashboardKpisResponse(long totalMaterials, Map<String, Long> statusCounts, List<OfficeCountDto> officeCounts, long incidencesCount, Double meanRepairTimeInHours, long completeWorkstations, long partialWorkstations, long specialWorkstations, long leftoverMonitors, long leftoverKeyboards, long leftoverMice, long leftoverHeadphones, Map<String, Long> materialTypeCounts) {
+    public DashboardKpisResponse(long totalMaterials, Map<String, Long> statusCounts, List<OfficeCountDto> officeCounts, long incidencesCount, Double meanRepairTimeInHours, long completeWorkstations, long partialWorkstations, long specialWorkstations, long leftoverMonitors, long leftoverKeyboards, long leftoverMice, long leftoverHeadphones, Map<String, Long> materialTypeCounts, BigDecimal totalAcquisitionCost, BigDecimal totalCurrentValue, BigDecimal totalDepreciation, List<String> systemAlerts, Map<String, BigDecimal> officeCosts) {
         this.totalMaterials = totalMaterials;
         this.statusCounts = statusCounts;
         this.officeCounts = officeCounts;
@@ -35,6 +43,11 @@ public class DashboardKpisResponse {
         this.leftoverMice = leftoverMice;
         this.leftoverHeadphones = leftoverHeadphones;
         this.materialTypeCounts = materialTypeCounts;
+        this.totalAcquisitionCost = totalAcquisitionCost;
+        this.totalCurrentValue = totalCurrentValue;
+        this.totalDepreciation = totalDepreciation;
+        this.systemAlerts = systemAlerts;
+        this.officeCosts = officeCosts;
     }
 
     public long getTotalMaterials() {
@@ -139,5 +152,45 @@ public class DashboardKpisResponse {
 
     public void setMaterialTypeCounts(Map<String, Long> materialTypeCounts) {
         this.materialTypeCounts = materialTypeCounts;
+    }
+
+    public BigDecimal getTotalAcquisitionCost() {
+        return totalAcquisitionCost;
+    }
+
+    public void setTotalAcquisitionCost(BigDecimal totalAcquisitionCost) {
+        this.totalAcquisitionCost = totalAcquisitionCost;
+    }
+
+    public BigDecimal getTotalCurrentValue() {
+        return totalCurrentValue;
+    }
+
+    public void setTotalCurrentValue(BigDecimal totalCurrentValue) {
+        this.totalCurrentValue = totalCurrentValue;
+    }
+
+    public BigDecimal getTotalDepreciation() {
+        return totalDepreciation;
+    }
+
+    public void setTotalDepreciation(BigDecimal totalDepreciation) {
+        this.totalDepreciation = totalDepreciation;
+    }
+
+    public List<String> getSystemAlerts() {
+        return systemAlerts;
+    }
+
+    public void setSystemAlerts(List<String> systemAlerts) {
+        this.systemAlerts = systemAlerts;
+    }
+
+    public Map<String, BigDecimal> getOfficeCosts() {
+        return officeCosts;
+    }
+
+    public void setOfficeCosts(Map<String, BigDecimal> officeCosts) {
+        this.officeCosts = officeCosts;
     }
 }

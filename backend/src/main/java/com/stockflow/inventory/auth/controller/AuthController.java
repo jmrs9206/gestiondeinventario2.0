@@ -125,6 +125,14 @@ public class AuthController {
         if (token != null && !token.isEmpty()) {
             authService.logout(token, ip, userAgent);
         }
+
+        // Blacklist current access token if present in Authorization header
+        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String accessToken = authHeader.substring(7);
+            long expTime = jwtService.extractExpirationTimeMs(accessToken);
+            tokenBlacklistService.blacklistToken(accessToken, expTime);
+        }
         
         clearAccessTokenCookie(response);
         clearRefreshTokenCookie(response);

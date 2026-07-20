@@ -10,6 +10,8 @@ import {
   reactivateMaterial,
   importMaterials,
   exportMaterials,
+  exportMaterialsToExcel,
+  exportMaterialsToPdf,
   MaterialResponse,
   MaterialRequest
 } from '../services/material.service';
@@ -94,6 +96,9 @@ export default function MaterialsTable() {
   const [formDesc, setFormDesc] = useState('');
   const [formStatus, setFormStatus] = useState('OPERATIVO');
   const [formOffice, setFormOffice] = useState('');
+  const [formPurchasePrice, setFormPurchasePrice] = useState<string>('');
+  const [formPurchaseDate, setFormPurchaseDate] = useState<string>('');
+  const [formComment, setFormComment] = useState<string>('');
   const [decommissionComment, setDecommissionComment] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -162,6 +167,9 @@ export default function MaterialsTable() {
     setFormDesc('');
     setFormStatus('OPERATIVO');
     setFormOffice(offices[0]?.publicId || '');
+    setFormPurchasePrice('');
+    setFormPurchaseDate('');
+    setFormComment('');
     setFormError(null);
     setShowCreateModal(true);
   };
@@ -175,6 +183,9 @@ export default function MaterialsTable() {
     setFormDesc(material.description || '');
     setFormStatus(material.status);
     setFormOffice(material.officePublicId || '');
+    setFormPurchasePrice(material.purchasePrice !== undefined && material.purchasePrice !== null ? material.purchasePrice.toString() : '');
+    setFormPurchaseDate(material.purchaseDate || '');
+    setFormComment('');
     setFormError(null);
     setShowEditModal(true);
   };
@@ -197,6 +208,10 @@ export default function MaterialsTable() {
       setFormError('Todos los campos obligatorios deben ser completados (incluyendo la oficina).');
       return;
     }
+    if (!formComment.trim()) {
+      setFormError('El comentario de trazabilidad es obligatorio.');
+      return;
+    }
     setSubmitting(true);
     setFormError(null);
     try {
@@ -207,7 +222,10 @@ export default function MaterialsTable() {
         serialNumber: normalizedSerial,
         description: normalizedDesc || null,
         status: formStatus,
-        officePublicId: formOffice
+        officePublicId: formOffice,
+        purchasePrice: formPurchasePrice ? parseFloat(formPurchasePrice) : undefined,
+        purchaseDate: formPurchaseDate || undefined,
+        comment: formComment
       };
       await createMaterial(requestData);
       setShowCreateModal(false);
@@ -233,6 +251,10 @@ export default function MaterialsTable() {
       setFormError('Todos los campos obligatorios deben ser completados (incluyendo la oficina).');
       return;
     }
+    if (!formComment.trim()) {
+      setFormError('El comentario de trazabilidad es obligatorio.');
+      return;
+    }
     setSubmitting(true);
     setFormError(null);
     try {
@@ -243,7 +265,10 @@ export default function MaterialsTable() {
         serialNumber: normalizedSerial,
         description: normalizedDesc || null,
         status: formStatus,
-        officePublicId: formOffice
+        officePublicId: formOffice,
+        purchasePrice: formPurchasePrice ? parseFloat(formPurchasePrice) : undefined,
+        purchaseDate: formPurchaseDate || undefined,
+        comment: formComment
       };
       await updateMaterial(selectedMaterial.publicCode, requestData);
       setShowEditModal(false);
@@ -305,6 +330,22 @@ export default function MaterialsTable() {
     }
   };
 
+  const handleExportExcel = async () => {
+    try {
+      await exportMaterialsToExcel();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al exportar materiales a Excel.');
+    }
+  };
+
+  const handleExportPdf = async () => {
+    try {
+      await exportMaterialsToPdf();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al exportar materiales a PDF.');
+    }
+  };
+
   const validateCsv = (content: string): string[] => {
     const errors: string[] = [];
     const lines = content.split(/\r?\n/);
@@ -350,12 +391,29 @@ export default function MaterialsTable() {
     return errors;
   };
 
-  const handleImportCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setImporting(true);
     setError(null);
+
+    const isCsv = file.name.endsWith('.csv');
+    if (!isCsv) {
+      // Excel file: import directly
+      try {
+        await importMaterials(file);
+        showToast('Importación masiva completada con éxito.');
+        loadMaterials();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Error al importar materiales.');
+        showToast(err instanceof Error ? err.message : 'Error al importar materiales.', 'error');
+      } finally {
+        setImporting(false);
+        e.target.value = '';
+      }
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = async (evt) => {
@@ -493,7 +551,7 @@ export default function MaterialsTable() {
   ]));
 
   return (
-    <div className="flex-1 bg-background p-6 md:p-8 space-y-6 relative animate-fade-in">
+    <div className="flex-1 bg-background p-4 sm:p-6 md:p-8 space-y-6 relative animate-fade-in">
       {/* Toast Notification Banner */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border backdrop-blur-md transition-all duration-300 ${
@@ -512,7 +570,7 @@ export default function MaterialsTable() {
           <h1 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 font-display">Inventario de Materiales</h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 font-sans">Busca, filtra, edita o registra nuevos equipos en el sistema.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
           <button
             onClick={handleOpenScanner}
             className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-xs font-bold text-zinc-700 dark:text-zinc-200 px-4 py-2.5 transition-all hover:scale-[1.02] hover-lift font-display"
@@ -525,18 +583,32 @@ export default function MaterialsTable() {
             className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-xs font-bold text-zinc-700 dark:text-zinc-200 px-4 py-2.5 transition-all hover:scale-[1.02] hover-lift font-display"
           >
             <Download className="h-4 w-4" />
-            Exportar CSV
+            CSV
+          </button>
+          <button
+            onClick={handleExportExcel}
+            className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-xs font-bold text-zinc-700 dark:text-zinc-200 px-4 py-2.5 transition-all hover:scale-[1.02] hover-lift font-display"
+          >
+            <Download className="h-4 w-4 text-emerald-600" />
+            Excel
+          </button>
+          <button
+            onClick={handleExportPdf}
+            className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-xs font-bold text-zinc-700 dark:text-zinc-200 px-4 py-2.5 transition-all hover:scale-[1.02] hover-lift font-display"
+          >
+            <Download className="h-4 w-4 text-rose-600" />
+            PDF
           </button>
           <label
             className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-xs font-bold text-zinc-700 dark:text-zinc-200 px-4 py-2.5 transition-all hover:scale-[1.02] hover-lift cursor-pointer font-display"
           >
             {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            Importar CSV
+            Importar
             <input
               type="file"
-              accept=".csv"
+              accept=".csv,.xlsx,.xls"
               disabled={importing}
-              onChange={handleImportCsv}
+              onChange={handleImportFile}
               className="hidden"
             />
           </label>
@@ -886,8 +958,44 @@ export default function MaterialsTable() {
                   onChange={(e) => setFormDesc(normalizeInput(e.target.value))}
                   onBlur={(e) => setFormDesc(normalizeInput(e.target.value))}
                   placeholder="Agregar detalles adicionales del equipo..."
-                  rows={3}
+                  rows={2}
                   className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 resize-none uppercase tracking-wide transition duration-150"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Precio de Adquisición (€)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formPurchasePrice}
+                    onChange={(e) => setFormPurchasePrice(e.target.value)}
+                    placeholder="Ej: 899.99"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 transition duration-150"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Fecha de Adquisición</label>
+                  <input
+                    type="date"
+                    value={formPurchaseDate}
+                    onChange={(e) => setFormPurchaseDate(e.target.value)}
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 transition duration-150"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Comentario de Registro *</label>
+                <textarea
+                  value={formComment}
+                  onChange={(e) => setFormComment(e.target.value)}
+                  placeholder="Justifique la creación de este material..."
+                  required
+                  rows={2}
+                  className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 resize-none transition duration-150"
                 />
               </div>
             </div>
@@ -1021,8 +1129,44 @@ export default function MaterialsTable() {
                   value={formDesc}
                   onChange={(e) => setFormDesc(normalizeInput(e.target.value))}
                   onBlur={(e) => setFormDesc(normalizeInput(e.target.value))}
-                  rows={3}
+                  rows={2}
                   className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 resize-none uppercase tracking-wide transition duration-150"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Precio de Adquisición (€)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formPurchasePrice}
+                    onChange={(e) => setFormPurchasePrice(e.target.value)}
+                    placeholder="Ej: 899.99"
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 transition duration-150"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Fecha de Adquisición</label>
+                  <input
+                    type="date"
+                    value={formPurchaseDate}
+                    onChange={(e) => setFormPurchaseDate(e.target.value)}
+                    className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 transition duration-150"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs text-zinc-550 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Comentario de Modificación *</label>
+                <textarea
+                  value={formComment}
+                  onChange={(e) => setFormComment(e.target.value)}
+                  placeholder="Justifique la modificación de este material..."
+                  required
+                  rows={2}
+                  className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 text-zinc-900 dark:text-zinc-50 resize-none transition duration-150"
                 />
               </div>
             </div>

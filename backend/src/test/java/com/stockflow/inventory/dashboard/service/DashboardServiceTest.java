@@ -137,14 +137,14 @@ class DashboardServiceTest {
         assertNotNull(kpis);
         // Expecting:
         // monitors = 3, keyboards = 2, mice = 2, headphones = 3
-        // 1. Special: min(3/2, 2, 2, 3) = min(1, 2, 2, 3) = 1
-        // Remaining: monitors = 1, keyboards = 1, mice = 1, headphones = 2
-        // 2. Complete: min(1, 1, 1, 2/2) = min(1, 1, 1, 1) = 1
-        // Remaining: monitors = 0, keyboards = 0, mice = 0, headphones = 0
-        // 3. Partial: min(0, 0, 0, 0) = 0
+        // 1. Special: min(3/2, 2, 2, 3/2) = min(1, 2, 2, 1) = 1
+        // Remaining: monitors = 1, keyboards = 1, mice = 1, headphones = 1
+        // 2. Complete: min(1, 1, 1, 1/2) = min(1, 1, 1, 0) = 0
+        // Remaining: monitors = 1, keyboards = 1, mice = 1, headphones = 1
+        // 3. Partial: min(1, 1, 1, 1) = 1
         assertEquals(1L, kpis.getSpecialWorkstations());
-        assertEquals(1L, kpis.getCompleteWorkstations());
-        assertEquals(0L, kpis.getPartialWorkstations());
+        assertEquals(0L, kpis.getCompleteWorkstations());
+        assertEquals(1L, kpis.getPartialWorkstations());
         assertEquals(0L, kpis.getLeftoverMonitors());
         assertEquals(0L, kpis.getLeftoverKeyboards());
         assertEquals(0L, kpis.getLeftoverMice());
@@ -189,14 +189,14 @@ class DashboardServiceTest {
 
         assertNotNull(kpis);
         // Expecting:
-        // Special = min(2/2, 3, 4, 1) = 1. Remaining: M=0, T=2, R=3, A=0
+        // Special = min(2/2, 3, 4, 1/2) = 0. Remaining: M=2, T=3, R=4, A=1
         // Complete = 0
-        // Partial = 0
-        // Leftovers: M=0, T=2, R=3, A=0
-        assertEquals(1L, kpis.getSpecialWorkstations());
+        // Partial = 1
+        // Leftovers: M=1, T=2, R=3, A=0
+        assertEquals(0L, kpis.getSpecialWorkstations());
         assertEquals(0L, kpis.getCompleteWorkstations());
-        assertEquals(0L, kpis.getPartialWorkstations());
-        assertEquals(0L, kpis.getLeftoverMonitors());
+        assertEquals(1L, kpis.getPartialWorkstations());
+        assertEquals(1L, kpis.getLeftoverMonitors());
         assertEquals(2L, kpis.getLeftoverKeyboards());
         assertEquals(3L, kpis.getLeftoverMice());
         assertEquals(0L, kpis.getLeftoverHeadphones());

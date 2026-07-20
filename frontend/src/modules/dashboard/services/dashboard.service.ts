@@ -20,6 +20,11 @@ export interface DashboardKpis {
   leftoverMice: number;
   leftoverHeadphones: number;
   materialTypeCounts: Record<string, number>;
+  totalAcquisitionCost: number;
+  totalCurrentValue: number;
+  totalDepreciation: number;
+  systemAlerts: string[];
+  officeCosts: Record<string, number>;
 }
 
 export interface MaterialHistoryResponse {

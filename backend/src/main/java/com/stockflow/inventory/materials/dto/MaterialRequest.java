@@ -4,6 +4,8 @@ import com.stockflow.inventory.common.entity.MaterialStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public class MaterialRequest {
 
@@ -27,9 +29,29 @@ public class MaterialRequest {
     @NotNull(message = "Status is mandatory")
     private MaterialStatus status;
 
+    @NotBlank(message = "Comment is mandatory")
     private String comment;
 
+    private BigDecimal purchasePrice;
+
+    private LocalDate purchaseDate;
+
     // Getters and Setters
+    public BigDecimal getPurchasePrice() {
+        return purchasePrice;
+    }
+
+    public void setPurchasePrice(BigDecimal purchasePrice) {
+        this.purchasePrice = purchasePrice;
+    }
+
+    public LocalDate getPurchaseDate() {
+        return purchaseDate;
+    }
+
+    public void setPurchaseDate(LocalDate purchaseDate) {
+        this.purchaseDate = purchaseDate;
+    }
     public String getMaterialType() {
         return materialType;
     }

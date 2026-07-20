@@ -6,7 +6,7 @@ import {
   createUser,
   updateUser,
   changeUserStatus,
-  changeUserPassword,
+  sendPasswordResetEmail,
   UserResponse,
   UserCreateRequest,
   UserUpdateRequest
@@ -51,7 +51,6 @@ export default function UsersTable() {
   const [formLastName, setFormLastName] = useState('');
   const [formEmail, setFormEmail] = useState('');
   const [formRole, setFormRole] = useState('TECNICO');
-  const [formPassword, setFormPassword] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -104,7 +103,6 @@ export default function UsersTable() {
     setFormLastName('');
     setFormEmail('');
     setFormRole('TECNICO');
-    setFormPassword('');
     setFormError(null);
     setShowCreateModal(true);
   };
@@ -121,7 +119,6 @@ export default function UsersTable() {
 
   const handleOpenPassword = (user: UserResponse) => {
     setSelectedUser(user);
-    setFormPassword('');
     setFormError(null);
     setShowPasswordModal(true);
   };
@@ -184,23 +181,15 @@ export default function UsersTable() {
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
-    if (!formPassword.trim()) {
-      setFormError('La contraseña no puede estar vacía.');
-      return;
-    }
-    if (formPassword.length < 8) {
-      setFormError('La contraseña debe tener al menos 8 caracteres.');
-      return;
-    }
     setSubmitting(true);
     setFormError(null);
     try {
-      await changeUserPassword(selectedUser.publicId, formPassword);
+      await sendPasswordResetEmail(selectedUser.publicId);
       setShowPasswordModal(false);
-      showToast('Contraseña restablecida exitosamente.');
+      showToast('Correo de reestablecimiento enviado exitosamente.');
     } catch (err: unknown) {
-      setFormError(err instanceof Error ? err.message : 'Error al reestablecer la contraseña.');
-      showToast(err instanceof Error ? err.message : 'Error al reestablecer la contraseña.', 'error');
+      setFormError(err instanceof Error ? err.message : 'Error al solicitar el reestablecimiento de contraseña.');
+      showToast(err instanceof Error ? err.message : 'Error al solicitar el reestablecimiento de contraseña.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -571,7 +560,7 @@ export default function UsersTable() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <form onSubmit={handlePasswordSubmit} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-2xl w-full max-w-sm relative overflow-hidden animate-fade-in">
             <div className="px-6 py-5 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
-              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 font-display">Reestablecer Contraseña</h3>
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 font-display">Solicitar Cambio de Contraseña</h3>
               <button type="button" onClick={() => setShowPasswordModal(false)} className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 transition">
                 <X className="h-5 w-5" />
               </button>
@@ -585,25 +574,16 @@ export default function UsersTable() {
                 </div>
               )}
 
-              <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                Estás forzando un cambio de credenciales para el usuario{' '}
+              <p className="text-xs text-zinc-650 dark:text-zinc-300 leading-relaxed">
+                ¿Estás seguro de que deseas enviar un correo de restablecimiento de contraseña a{' '}
                 <span className="font-bold text-zinc-900 dark:text-zinc-50">
                   {selectedUser?.firstName} {selectedUser?.lastName}
                 </span>
-                .
+                ?
               </p>
-
-              <div className="space-y-1">
-                <label className="text-xs text-zinc-500 dark:text-zinc-400 font-bold font-display uppercase tracking-wider">Nueva Contraseña *</label>
-                <input
-                  type="password"
-                  required
-                  value={formPassword}
-                  onChange={(e) => setFormPassword(e.target.value)}
-                  placeholder="Mínimo 8 caracteres"
-                  className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 text-zinc-900 dark:text-zinc-50 transition"
-                />
-              </div>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 p-3 rounded-xl">
+                El sistema generará un enlace seguro de un solo uso y lo enviará automáticamente a su dirección de correo electrónico ({selectedUser?.email}). El usuario podrá configurar su nueva contraseña al pulsar dicho enlace.
+              </p>
             </div>
 
             <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-700 flex justify-end gap-2 bg-zinc-50 dark:bg-zinc-900/50">
@@ -617,10 +597,10 @@ export default function UsersTable() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 disabled:opacity-40 text-xs font-bold transition flex items-center gap-2 font-display uppercase tracking-wider"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 text-xs font-bold transition flex items-center gap-2 font-display uppercase tracking-wider"
               >
                 {submitting && <Loader2 className="h-3 w-3 animate-spin" />}
-                Reestablecer
+                Enviar Correo
               </button>
             </div>
           </form>

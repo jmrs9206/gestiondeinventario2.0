@@ -12,6 +12,7 @@ import dynamic from 'next/dynamic';
 import KpiCard from '../../modules/dashboard/components/KpiCard';
 const StatusPieChart = dynamic(() => import('../../modules/dashboard/components/StatusPieChart'), { ssr: false });
 const OfficeBarChart = dynamic(() => import('../../modules/dashboard/components/OfficeBarChart'), { ssr: false });
+const OfficeCostBarChart = dynamic(() => import('../../modules/dashboard/components/OfficeCostBarChart'), { ssr: false });
 import RecentMovementsTable from '../../modules/dashboard/components/RecentMovementsTable';
 import DashboardFilters from '../../modules/dashboard/components/DashboardFilters';
 import ProtectedRoute from '@/modules/auth/components/ProtectedRoute';
@@ -152,7 +153,7 @@ function DashboardPageContent() {
   const isEmpty = !kpis || kpis.totalMaterials === 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
       <div className="mx-auto max-w-7xl space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 dark:border-zinc-700 pb-6 gap-4">
@@ -175,6 +176,21 @@ function DashboardPageContent() {
             </button>
           </div>
         </div>
+
+        {/* Active Alerts */}
+        {kpis && kpis.systemAlerts && kpis.systemAlerts.length > 0 && (
+          <div className="flex flex-col items-start gap-3">
+            {kpis.systemAlerts.map((alert, index) => (
+              <div
+                key={index}
+                className="inline-flex w-fit max-w-full items-start gap-3 rounded-2xl border border-rose-200/80 bg-white/85 px-4 py-3 text-sm text-rose-800 shadow-lg shadow-rose-950/5 backdrop-blur-md dark:border-rose-900/50 dark:bg-rose-950/25 dark:text-rose-200 dark:shadow-black/20"
+              >
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                <span className="font-medium leading-relaxed">{alert}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {isEmpty ? (
           /* Empty State Dashboard */
@@ -224,6 +240,33 @@ function DashboardPageContent() {
               </div>
             )}
 
+            {/* Cost KPIs Row */}
+            {kpis && kpis.totalAcquisitionCost !== undefined && (
+              <div className="grid gap-6 sm:grid-cols-3">
+                <KpiCard
+                  title="Inversión en Adquisición"
+                  value={`${kpis.totalAcquisitionCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`}
+                  icon={<div className="font-extrabold text-lg text-blue-500">€</div>}
+                  description="valor total de compra del inventario"
+                  colorClassName="from-zinc-800 to-zinc-900 border-zinc-700/50"
+                />
+                <KpiCard
+                  title="Valor Amortizado"
+                  value={`${kpis.totalCurrentValue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`}
+                  icon={<div className="font-extrabold text-lg text-emerald-500">📉</div>}
+                  description="valor depreciado lineal (5 años)"
+                  colorClassName="from-zinc-800 to-zinc-900 border-zinc-700/50"
+                />
+                <KpiCard
+                  title="Depreciación Total"
+                  value={`${kpis.totalDepreciation.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`}
+                  icon={<div className="font-extrabold text-lg text-amber-500">⏳</div>}
+                  description="pérdida de valor acumulada"
+                  colorClassName="from-zinc-800 to-zinc-900 border-zinc-700/50"
+                />
+              </div>
+            )}
+
             {/* Puestos de Trabajo Section */}
             {kpis && (
               <div className="space-y-4">
@@ -252,7 +295,7 @@ function DashboardPageContent() {
                       </div>
                     </div>
                     <div className="mt-4 text-xs text-slate-500 dark:text-zinc-400 font-medium">
-                      Requiere 2 Monitores + Teclado + Ratón + 1 Audífono
+                      Requiere 2 Monitores + Teclado + Ratón + 2 Audífonos
                     </div>
                   </div>
 
@@ -364,9 +407,10 @@ function DashboardPageContent() {
 
             {/* Charts Section */}
             {kpis && (
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-6 md:grid-cols-3">
                 <StatusPieChart statusCounts={kpis.statusCounts} />
                 <OfficeBarChart officeCounts={kpis.officeCounts} />
+                <OfficeCostBarChart officeCosts={kpis.officeCosts} />
               </div>
             )}
 

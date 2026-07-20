@@ -31,7 +31,7 @@ export interface BrandingSettings {
 }
 
 const DEFAULT_BRANDING: BrandingSettings = {
-  appName: 'Aplicación',
+  appName: 'GESTION DE INVENTARIO',
   companyName: '',
   logoUrl: '',
   logoPngUrl: '',

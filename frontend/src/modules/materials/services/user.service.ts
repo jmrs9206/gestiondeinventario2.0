@@ -56,9 +56,8 @@ export async function changeUserStatus(publicId: string, active: boolean): Promi
   });
 }
 
-export async function changeUserPassword(publicId: string, password: string): Promise<UserResponse> {
-  return apiFetch<UserResponse>(`/api/v1/users/${publicId}/password`, {
-    method: 'PUT',
-    body: JSON.stringify({ password }),
+export async function sendPasswordResetEmail(publicId: string): Promise<UserResponse> {
+  return apiFetch<UserResponse>(`/api/v1/users/${publicId}/password-reset`, {
+    method: 'POST',
   });
 }

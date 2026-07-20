@@ -10,6 +10,8 @@ export interface MaterialResponse {
   status: string; // OPERATIVO, EN_REPARACION, ROTO, BAJA
   officePublicId: string | null;
   officeName: string | null;
+  purchasePrice?: number;
+  purchaseDate?: string;
   createdByName: string | null;
   updatedByName: string | null;
   createdAt: string;
@@ -24,6 +26,9 @@ export interface MaterialRequest {
   description: string | null;
   status: string;
   officePublicId: string | null;
+  purchasePrice?: number;
+  purchaseDate?: string;
+  comment: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -136,6 +141,54 @@ export async function exportMaterials(): Promise<void> {
   const a = document.createElement('a');
   a.href = url;
   a.download = 'inventario_materiales.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export async function exportMaterialsToExcel(): Promise<void> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const headers = new Headers();
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  const BASE_URL = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080');
+  const response = await fetch(`${BASE_URL}/api/v1/materials/export/excel`, {
+    headers,
+  });
+  if (!response.ok) {
+    throw new Error('Error al exportar materiales a Excel');
+  }
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'inventario_materiales.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export async function exportMaterialsToPdf(): Promise<void> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const headers = new Headers();
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  const BASE_URL = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080');
+  const response = await fetch(`${BASE_URL}/api/v1/materials/export/pdf`, {
+    headers,
+  });
+  if (!response.ok) {
+    throw new Error('Error al exportar materiales a PDF');
+  }
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'inventario_materiales.pdf';
   document.body.appendChild(a);
   a.click();
   a.remove();

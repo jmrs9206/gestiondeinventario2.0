@@ -95,7 +95,7 @@ public class MaterialController {
     @PreAuthorize("hasAuthority('UPDATE_MATERIAL_STATUS')")
     public ResponseEntity<ApiResponse<MaterialResponse>> deleteMaterial(
             @PathVariable String publicCode,
-            @RequestParam(required = false) String comment,
+            @RequestParam(required = true) String comment,
             @AuthenticationPrincipal User performer,
             HttpServletRequest servletRequest
     ) {
@@ -114,7 +114,12 @@ public class MaterialController {
     ) {
         String ip = getClientIp(servletRequest);
         String userAgent = servletRequest.getHeader("User-Agent");
-        materialService.importMaterialsFromCsv(file, performer.getPublicId(), ip, userAgent);
+        String filename = file.getOriginalFilename();
+        if (filename != null && (filename.endsWith(".xlsx") || filename.endsWith(".xls"))) {
+            materialService.importMaterialsFromExcel(file, performer.getPublicId(), ip, userAgent);
+        } else {
+            materialService.importMaterialsFromCsv(file, performer.getPublicId(), ip, userAgent);
+        }
         return ResponseEntity.ok(new ApiResponse<>("Importación masiva completada con éxito"));
     }
 
@@ -131,6 +136,34 @@ public class MaterialController {
                 .build());
         
         return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/export/excel")
+    @PreAuthorize("hasAuthority('READ_MATERIAL_HISTORY')")
+    public ResponseEntity<byte[]> exportMaterialsToExcel() {
+        byte[] excelBytes = materialService.exportMaterialsToExcel();
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDisposition(ContentDisposition.builder("attachment")
+                .filename("inventario_materiales.xlsx")
+                .build());
+        
+        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/export/pdf")
+    @PreAuthorize("hasAuthority('READ_MATERIAL_HISTORY')")
+    public ResponseEntity<byte[]> exportMaterialsToPdf() {
+        byte[] pdfBytes = materialService.exportMaterialsToPdf();
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.builder("attachment")
+                .filename("inventario_materiales.pdf")
+                .build());
+        
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 
     private String getClientIp(HttpServletRequest request) {

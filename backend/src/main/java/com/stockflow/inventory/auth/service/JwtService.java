@@ -149,6 +149,14 @@ public class JwtService {
         return extractClaim(token, Claims::getExpiration);
     }
 
+    public long extractExpirationTimeMs(String token) {
+        try {
+            return extractExpiration(token).getTime();
+        } catch (Exception e) {
+            return System.currentTimeMillis() + expirationMs;
+        }
+    }
+
     public long getExpirationMs() {
         return expirationMs;
     }

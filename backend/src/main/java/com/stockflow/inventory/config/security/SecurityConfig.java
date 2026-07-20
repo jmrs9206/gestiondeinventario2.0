@@ -48,13 +48,15 @@ import java.util.Map;
 public class SecurityConfig {
  
     private final JwtFilter jwtFilter;
+    private final com.stockflow.inventory.common.filter.CorrelationIdFilter correlationIdFilter;
     private final AuditService auditService;
 
     @Value("${app.security.cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000}")
     private List<String> allowedOrigins;
  
-    public SecurityConfig(JwtFilter jwtFilter, AuditService auditService) {
+    public SecurityConfig(JwtFilter jwtFilter, com.stockflow.inventory.common.filter.CorrelationIdFilter correlationIdFilter, AuditService auditService) {
         this.jwtFilter = jwtFilter;
+        this.correlationIdFilter = correlationIdFilter;
         this.auditService = auditService;
     }
 
@@ -72,6 +74,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider)
+            .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(authenticationEntryPoint())
@@ -157,8 +160,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "X-API-Key"));
-        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "X-API-Key", "X-Correlation-ID"));
+        configuration.setExposedHeaders(List.of("Authorization", "X-Correlation-ID"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
