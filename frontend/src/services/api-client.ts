@@ -10,6 +10,10 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
+  if (!headers.has('X-Correlation-ID')) {
+    const correlationId = 'req-fe-' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+    headers.set('X-Correlation-ID', correlationId);
+  }
 
   const response = await fetch(`${BASE_URL}${path}`, {
     ...options,
