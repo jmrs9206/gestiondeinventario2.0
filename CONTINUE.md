@@ -35,6 +35,11 @@ Se ha completado la implementación de las siguientes funcionalidades clave en B
 - **Backend ([CorrelationIdFilter.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/common/filter/CorrelationIdFilter.java)):** Filtro HTTP de máxima prioridad que asigna un identificador único `X-Correlation-ID` en el MDC (*Mapped Diagnostic Context*) para correlacionar logs de backend de extremo a extremo.
 - **Frontend ([api-client.ts](file:///home/jmrs/gestionDeInventario2.0/frontend/src/services/api-client.ts)):** Inyección automática de cabeceras `X-Correlation-ID` en peticiones HTTP salientes para rastreo distribuido frontend-backend.
 
+### 5. Revocación Inmediata de Tokens JWT y Seguridad en Sesiones
+- **Servicio de Blacklist ([TokenBlacklistService.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/auth/service/TokenBlacklistService.java)):** Módulo de revocación de tokens JWT con limpieza automática programada (`@Scheduled`) de tokens expirados.
+- **Intercepción ([JwtFilter.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/auth/filter/JwtFilter.java)):** Bloqueo inmediato con HTTP 401 de cualquier petición que presente un token de acceso revocado tras el cierre de sesión.
+- **Invalidación en Logout ([AuthController.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/auth/controller/AuthController.java)):** Inclusión del token Bearer de acceso en la lista negra tras la llamada a `/api/v1/auth/logout`.
+
 ---
 
 ## 🚀 Pasos para reanudar cuando digas "continuar donde lo dejaste":
