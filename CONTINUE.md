@@ -31,6 +31,10 @@ Se ha completado la implementación de las siguientes funcionalidades clave en B
 - **Botones y Tablas ([MaterialsTable.tsx](file:///home/jmrs/gestionDeInventario2.0/frontend/src/modules/materials/components/MaterialsTable.tsx)):** Grid adaptativo en pantallas móviles para la barra de herramientas y filtros.
 - **Dashboard ([page.tsx](file:///home/jmrs/gestionDeInventario2.0/frontend/src/app/dashboard/page.tsx)):** Relleno dinámico `p-4 sm:p-6 md:p-8` y cuadrícula adaptable de KPIs e incidentes para pantallas de 320px a 4K.
 
+### 4. Telemetría y Trazabilidad Distribuida (Correlation ID)
+- **Backend ([CorrelationIdFilter.java](file:///home/jmrs/gestionDeInventario2.0/backend/src/main/java/com/stockflow/inventory/common/filter/CorrelationIdFilter.java)):** Filtro HTTP de máxima prioridad que asigna un identificador único `X-Correlation-ID` en el MDC (*Mapped Diagnostic Context*) para correlacionar logs de backend de extremo a extremo.
+- **Frontend ([api-client.ts](file:///home/jmrs/gestionDeInventario2.0/frontend/src/services/api-client.ts)):** Inyección automática de cabeceras `X-Correlation-ID` en peticiones HTTP salientes para rastreo distribuido frontend-backend.
+
 ---
 
 ## 🚀 Pasos para reanudar cuando digas "continuar donde lo dejaste":
