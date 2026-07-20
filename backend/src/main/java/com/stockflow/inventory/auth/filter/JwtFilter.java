@@ -22,10 +22,16 @@ import java.io.IOException;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final com.stockflow.inventory.auth.service.TokenBlacklistService tokenBlacklistService;
     private final UserDetailsService userDetailsService;
 
-    public JwtFilter(JwtService jwtService, @Lazy UserDetailsService userDetailsService) {
+    public JwtFilter(
+            JwtService jwtService, 
+            com.stockflow.inventory.auth.service.TokenBlacklistService tokenBlacklistService,
+            @Lazy UserDetailsService userDetailsService
+    ) {
         this.jwtService = jwtService;
+        this.tokenBlacklistService = tokenBlacklistService;
         this.userDetailsService = userDetailsService;
     }
 
@@ -42,6 +48,12 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         final String jwt = authHeader.substring(7);
+
+        if (tokenBlacklistService.isBlacklisted(jwt)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
             final String email = jwtService.extractEmail(jwt);
 

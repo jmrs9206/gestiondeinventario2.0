@@ -22,9 +22,17 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final com.stockflow.inventory.auth.service.TokenBlacklistService tokenBlacklistService;
+    private final com.stockflow.inventory.auth.service.JwtService jwtService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(
+            AuthService authService,
+            com.stockflow.inventory.auth.service.TokenBlacklistService tokenBlacklistService,
+            com.stockflow.inventory.auth.service.JwtService jwtService
+    ) {
         this.authService = authService;
+        this.tokenBlacklistService = tokenBlacklistService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/login")
@@ -95,6 +103,14 @@ public class AuthController {
         
         if (token != null && !token.isEmpty()) {
             authService.logout(token, ip, userAgent);
+        }
+
+        // Blacklist current access token if present in Authorization header
+        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String accessToken = authHeader.substring(7);
+            long expTime = jwtService.extractExpirationTimeMs(accessToken);
+            tokenBlacklistService.blacklistToken(accessToken, expTime);
         }
         
         clearRefreshTokenCookie(response);
