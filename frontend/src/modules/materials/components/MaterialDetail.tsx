@@ -127,6 +127,28 @@ export default function MaterialDetail({ publicCode }: MaterialDetailProps) {
 
   const [qrBlobUrl, setQrBlobUrl] = useState<string>('');
   const qrBlobUrlRef = React.useRef<string | null>(null);
+
+  const getDepreciationInfo = () => {
+    if (!material || material.purchasePrice === undefined || material.purchasePrice === null) return null;
+    const price = material.purchasePrice;
+    if (!material.purchaseDate) {
+      return { price, depreciation: 0, currentValue: price };
+    }
+    const pDate = new Date(material.purchaseDate);
+    const now = new Date();
+    if (isNaN(pDate.getTime()) || pDate > now) {
+      return { price, depreciation: 0, currentValue: price };
+    }
+    const diffMonths = (now.getFullYear() - pDate.getFullYear()) * 12 + (now.getMonth() - pDate.getMonth());
+    const monthsPassed = Math.max(0, diffMonths);
+    const monthsToDepreciate = 60;
+    const depreciationPercent = Math.min(1.0, monthsPassed / monthsToDepreciate);
+    const depreciation = price * depreciationPercent;
+    const currentValue = price - depreciation;
+    return { price, depreciation, currentValue };
+  };
+
+  const depInfo = getDepreciationInfo();
   // Fetch QR image as a blob with Auth header
   const loadQrImage = useCallback(async (signal?: AbortSignal) => {
     if (!material) return;
@@ -320,13 +342,56 @@ export default function MaterialDetail({ publicCode }: MaterialDetailProps) {
                   </div>
                 </div>
               </div>
+
+              {/* Financial section */}
+              {depInfo && (
+                <div className="border-t border-slate-200 dark:border-zinc-700 pt-6 space-y-4">
+                  <h4 className="text-xs font-bold text-slate-650 dark:text-zinc-300 uppercase tracking-widest font-display">Información Financiera</h4>
+                  <div className="grid gap-6 sm:grid-cols-3">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-lg bg-white dark:bg-zinc-800 text-blue-500 border border-slate-200 dark:border-zinc-700">
+                        <div className="font-extrabold text-sm">€</div>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase tracking-wider">Precio Adquisición</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-zinc-50 mt-0.5">{depInfo.price.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-lg bg-white dark:bg-zinc-800 text-amber-500 border border-slate-200 dark:border-zinc-700">
+                        <div className="font-extrabold text-sm">⏳</div>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase tracking-wider">Amortización Acumulada</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-zinc-50 mt-0.5">{depInfo.depreciation.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-lg bg-white dark:bg-zinc-800 text-emerald-500 border border-slate-200 dark:border-zinc-700">
+                        <div className="font-extrabold text-sm">📉</div>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-600 dark:text-zinc-300 uppercase tracking-wider">Valor Actual Neto</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-zinc-50 mt-0.5">{depInfo.currentValue.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</p>
+                      </div>
+                    </div>
+                  </div>
+                  {material.purchaseDate && (
+                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400 italic">
+                      Amortización lineal calculada a 5 años (60 meses) desde la fecha de compra: {new Date(material.purchaseDate).toLocaleDateString('es-ES')}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* History timeline */}
             <div className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-6 rounded-2xl backdrop-blur-md space-y-6">
               <h3 className="text-base font-bold text-slate-900 dark:text-zinc-50 flex items-center gap-2">
                 <Clock className="h-4.5 w-4.5 text-slate-600 dark:text-zinc-300" />
-                Historial de Movimientos
+                Historial de Movimientos (Timeline)
               </h3>
 
               {history.length === 0 ? (
@@ -338,31 +403,41 @@ export default function MaterialDetail({ publicCode }: MaterialDetailProps) {
                       <li key={log.id}>
                         <div className="relative pb-8">
                           {idx !== history.length - 1 && (
-                            <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-slate-100" aria-hidden="true" />
+                            <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-slate-200 dark:bg-zinc-700" aria-hidden="true" />
                           )}
                           <div className="relative flex space-x-3">
                             <div>
-                              <span className="h-8 w-8 rounded-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-center text-xs text-slate-600 dark:text-zinc-300 shadow-md">
-                                {idx + 1}
+                              <span className="h-8 w-8 rounded-full bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-805 flex items-center justify-center text-xs text-blue-600 dark:text-blue-400 shadow-md">
+                                <Clock className="h-4 w-4" />
                               </span>
                             </div>
                             <div className="flex-1 min-w-0 pt-1.5 flex justify-between space-x-4">
-                              <div>
+                              <div className="space-y-1">
                                 <p className="text-xs font-semibold text-slate-800 dark:text-zinc-100">
-                                  {log.action}{' '}
-                                  {log.newStatus && log.previousStatus && (
-                                    <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-300">
-                                      ({log.previousStatus} → {log.newStatus})
+                                  {log.action === 'MATERIAL_CREATED' && 'Material Creado'}
+                                  {log.action === 'MATERIAL_UPDATED' && 'Material Modificado'}
+                                  {log.action === 'MATERIAL_DECOMMISSIONED' && 'Material Dado de Baja'}
+                                  {log.action === 'MATERIAL_REACTIVATED' && 'Material Reactivado'}
+                                  {log.action === 'MATERIAL_IMPORTED' && 'Material Importado'}
+                                  {!['MATERIAL_CREATED', 'MATERIAL_UPDATED', 'MATERIAL_DECOMMISSIONED', 'MATERIAL_REACTIVATED', 'MATERIAL_IMPORTED'].includes(log.action) && log.action}
+                                  {log.newStatus && log.previousStatus && log.newStatus !== log.previousStatus && (
+                                    <span className="ml-2 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 px-2 py-0.5 rounded-full border border-amber-250">
+                                      {log.previousStatus} → {log.newStatus}
+                                    </span>
+                                  )}
+                                  {log.newOfficeName && log.previousOfficeName && log.newOfficeName !== log.previousOfficeName && (
+                                    <span className="ml-2 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 px-2 py-0.5 rounded-full border border-blue-200">
+                                      {log.previousOfficeName} → {log.newOfficeName}
                                     </span>
                                   )}
                                 </p>
                                 {log.comment && (
-                                  <p className="text-xs text-slate-600 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-2.5 mt-1 leading-relaxed font-light">
-                                    {log.comment}
+                                  <p className="text-xs text-slate-650 dark:text-zinc-300 bg-slate-50 dark:bg-zinc-900 border border-slate-250 dark:border-zinc-700/80 rounded-xl p-3 leading-relaxed font-light shadow-inner">
+                                    &ldquo;{log.comment}&rdquo;
                                   </p>
                                 )}
-                                <div className="mt-1 flex items-center gap-2 text-[10px] font-semibold text-slate-600 dark:text-zinc-300">
-                                  <span>{log.performedByUserFullName || log.performedByUserEmail}</span>
+                                <div className="flex items-center gap-2 text-[10px] text-slate-600 dark:text-zinc-300">
+                                  <span className="font-semibold">{log.performedByUserFullName || log.performedByUserEmail || 'Sistema'}</span>
                                   <span>•</span>
                                   <span>{new Date(log.createdAt).toLocaleString('es-ES')}</span>
                                 </div>

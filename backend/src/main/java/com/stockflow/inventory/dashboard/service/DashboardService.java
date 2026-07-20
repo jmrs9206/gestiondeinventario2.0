@@ -14,7 +14,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -156,12 +158,12 @@ public class DashboardService {
                 }
             }
 
-            // 1. Special: 2 monitors, 1 keyboard, 1 mouse, 1 headphone
-            long special = Math.min(monitors / 2, Math.min(keyboards, Math.min(mice, headphones)));
+            // 1. Special: 2 monitors, 1 keyboard, 1 mouse, 2 headphones
+            long special = Math.min(monitors / 2, Math.min(keyboards, Math.min(mice, headphones / 2)));
             monitors -= special * 2;
             keyboards -= special;
             mice -= special;
-            headphones -= special;
+            headphones -= special * 2;
 
             // 2. Complete: 1 monitor, 1 keyboard, 1 mouse, 2 headphones
             long complete = Math.min(monitors, Math.min(keyboards, Math.min(mice, headphones / 2)));
@@ -196,6 +198,75 @@ public class DashboardService {
             }
         }
 
+        // Calculate Cost KPIs and depreciation (5 years linear)
+        BigDecimal totalAcquisitionCost = BigDecimal.ZERO;
+        BigDecimal totalCurrentValue = BigDecimal.ZERO;
+        LocalDate now = LocalDate.now();
+
+        for (Material m : allMaterials) {
+            if (m.isActive() && m.getPurchasePrice() != null) {
+                BigDecimal price = m.getPurchasePrice();
+                totalAcquisitionCost = totalAcquisitionCost.add(price);
+
+                if (m.getPurchaseDate() != null) {
+                    LocalDate purchaseDate = m.getPurchaseDate();
+                    if (purchaseDate.isAfter(now)) {
+                        totalCurrentValue = totalCurrentValue.add(price);
+                    } else {
+                        long monthsPassed = java.time.temporal.ChronoUnit.MONTHS.between(purchaseDate, now);
+                        if (monthsPassed >= 60) {
+                            // Fully depreciated, value is 0
+                            totalCurrentValue = totalCurrentValue.add(BigDecimal.ZERO);
+                        } else {
+                            BigDecimal depreciated = price.multiply(BigDecimal.valueOf(monthsPassed))
+                                    .divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP);
+                            BigDecimal currentValue = price.subtract(depreciated);
+                            if (currentValue.compareTo(BigDecimal.ZERO) < 0) {
+                                currentValue = BigDecimal.ZERO;
+                            }
+                            totalCurrentValue = totalCurrentValue.add(currentValue);
+                        }
+                    }
+                } else {
+                    totalCurrentValue = totalCurrentValue.add(price);
+                }
+            }
+        }
+        BigDecimal totalDepreciation = totalAcquisitionCost.subtract(totalCurrentValue);
+
+        // Office costs map
+        Map<String, BigDecimal> officeCosts = new LinkedHashMap<>();
+        for (Office office : offices) {
+            if (office.isActive()) {
+                officeCosts.put(office.getName(), BigDecimal.ZERO);
+            }
+        }
+        for (Material m : allMaterials) {
+            if (m.isActive() && m.getOffice() != null && m.getOffice().isActive() && m.getPurchasePrice() != null) {
+                String officeName = m.getOffice().getName();
+                BigDecimal currentCost = officeCosts.getOrDefault(officeName, BigDecimal.ZERO);
+                officeCosts.put(officeName, currentCost.add(m.getPurchasePrice()));
+            }
+        }
+
+        // System alerts for low stock / high incidents
+        List<String> systemAlerts = new ArrayList<>();
+        if (leftoverMonitors < 3) {
+            systemAlerts.add("Alerta: El stock de reserva de Monitores es críticamente bajo (" + leftoverMonitors + " unidades).");
+        }
+        if (leftoverKeyboards < 3) {
+            systemAlerts.add("Alerta: El stock de reserva de Teclados es críticamente bajo (" + leftoverKeyboards + " unidades).");
+        }
+        if (leftoverMice < 3) {
+            systemAlerts.add("Alerta: El stock de reserva de Ratones es críticamente bajo (" + leftoverMice + " unidades).");
+        }
+        if (leftoverHeadphones < 3) {
+            systemAlerts.add("Alerta: El stock de reserva de Audífonos es críticamente bajo (" + leftoverHeadphones + " unidades).");
+        }
+        if (totalMaterials > 0 && ((double) incidencesCount / totalMaterials) > 0.15) {
+            systemAlerts.add("Alerta: El índice de incidencias activas en el inventario supera el 15% (" + incidencesCount + " equipos).");
+        }
+
         return new DashboardKpisResponse(
                 totalMaterials,
                 statusCounts,
@@ -209,7 +280,12 @@ public class DashboardService {
                 leftoverKeyboards,
                 leftoverMice,
                 leftoverHeadphones,
-                materialTypeCounts
+                materialTypeCounts,
+                totalAcquisitionCost,
+                totalCurrentValue,
+                totalDepreciation,
+                systemAlerts,
+                officeCosts
         );
     }
 }

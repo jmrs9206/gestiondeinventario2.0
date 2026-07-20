@@ -7,6 +7,7 @@ import com.stockflow.inventory.users.entity.Role;
 import com.stockflow.inventory.users.entity.User;
 import com.stockflow.inventory.users.repository.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Optional;
@@ -15,6 +16,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@EnabledIf("com.stockflow.inventory.AbstractIntegrationTest#isDockerAvailable")
 class DatabaseMigrationIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired

@@ -21,7 +21,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -97,6 +100,8 @@ public class MaterialService {
                 office,
                 request.getStatus()
         );
+        material.setPurchasePrice(request.getPurchasePrice());
+        material.setPurchaseDate(request.getPurchaseDate());
         material.setActive(true);
 
         Material savedMaterial = materialRepository.save(material);
@@ -149,6 +154,8 @@ public class MaterialService {
         material.setSerialNumber(normalizeText(request.getSerialNumber()));
         material.setOffice(newOffice);
         material.setStatus(request.getStatus());
+        material.setPurchasePrice(request.getPurchasePrice());
+        material.setPurchaseDate(request.getPurchaseDate());
 
         Material updatedMaterial = materialRepository.save(material);
 
@@ -197,6 +204,10 @@ public class MaterialService {
 
         User performer = userRepository.findByPublicId(performerPublicId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + performerPublicId));
+
+        if (comment == null || comment.trim().isEmpty()) {
+            throw new IllegalArgumentException("Decommission comment is mandatory");
+        }
 
         MaterialStatus prevStatus = material.getStatus();
         Office office = material.getOffice();
@@ -342,6 +353,30 @@ public class MaterialService {
                 String officeName = normalizeText(cleanCsvField(fields[4]));
                 String statusStr = fields.length > 5 ? cleanCsvField(fields[5]) : "OPERATIVO";
 
+                BigDecimal purchasePrice = null;
+                if (fields.length > 6) {
+                    String priceStr = cleanCsvField(fields[6]);
+                    if (!priceStr.isEmpty()) {
+                        try {
+                            purchasePrice = new BigDecimal(priceStr);
+                        } catch (Exception e) {
+                            // ignore
+                        }
+                    }
+                }
+
+                LocalDate purchaseDate = null;
+                if (fields.length > 7) {
+                    String dateStr = cleanCsvField(fields[7]);
+                    if (!dateStr.isEmpty()) {
+                        try {
+                            purchaseDate = LocalDate.parse(dateStr);
+                        } catch (Exception e) {
+                            // ignore
+                        }
+                    }
+                }
+
                 if (materialType.isEmpty() || officeName.isEmpty()) {
                     continue;
                 }
@@ -379,6 +414,8 @@ public class MaterialService {
                         office,
                         status
                 );
+                material.setPurchasePrice(purchasePrice);
+                material.setPurchaseDate(purchaseDate);
                 material.setActive(true);
                 Material savedMaterial = materialRepository.save(material);
 
@@ -440,5 +477,257 @@ public class MaterialService {
             return "\"" + value.replace("\"", "\"\"") + "\"";
         }
         return value;
+    }
+
+    @Transactional
+    public void importMaterialsFromExcel(org.springframework.web.multipart.MultipartFile file, String performerPublicId, String ip, String userAgent) {
+        User performer = userRepository.findByPublicId(performerPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + performerPublicId));
+
+        try (org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(file.getInputStream())) {
+            org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+            boolean isHeader = true;
+            for (org.apache.poi.ss.usermodel.Row row : sheet) {
+                if (isHeader) {
+                    isHeader = false;
+                    continue;
+                }
+
+                String materialType = normalizeText(getCellValueAsString(row.getCell(0)));
+                String brand = normalizeText(getCellValueAsString(row.getCell(1)));
+                String model = normalizeText(getCellValueAsString(row.getCell(2)));
+                String serialNumber = normalizeText(getCellValueAsString(row.getCell(3)));
+                String officeName = normalizeText(getCellValueAsString(row.getCell(4)));
+                String statusStr = getCellValueAsString(row.getCell(5));
+                String priceStr = getCellValueAsString(row.getCell(6));
+                String dateStr = getCellValueAsString(row.getCell(7));
+
+                if (materialType.isEmpty() || officeName.isEmpty()) {
+                    continue;
+                }
+
+                Office office = officeRepository.findByNameIgnoreCase(officeName)
+                        .orElseGet(() -> {
+                            Office newOffice = new Office(UUID.randomUUID().toString(), officeName);
+                            newOffice.setActive(true);
+                            return officeRepository.save(newOffice);
+                        });
+
+                if (!office.isActive()) {
+                    office.setActive(true);
+                    office = officeRepository.save(office);
+                }
+
+                MaterialStatus status;
+                try {
+                    status = MaterialStatus.valueOf(statusStr.toUpperCase());
+                } catch (Exception e) {
+                    status = MaterialStatus.OPERATIVO;
+                }
+
+                BigDecimal purchasePrice = null;
+                if (!priceStr.isEmpty()) {
+                    try {
+                        purchasePrice = new BigDecimal(priceStr);
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                }
+
+                LocalDate purchaseDate = null;
+                if (!dateStr.isEmpty()) {
+                    try {
+                        purchaseDate = LocalDate.parse(dateStr);
+                    } catch (Exception e) {
+                        try {
+                            org.apache.poi.ss.usermodel.Cell dateCell = row.getCell(7);
+                            if (dateCell != null && org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(dateCell)) {
+                                purchaseDate = dateCell.getLocalDateTimeCellValue().toLocalDate();
+                            }
+                        } catch (Exception ex) {
+                            // ignore
+                        }
+                    }
+                }
+
+                String publicCode = generatePublicCode();
+                while (materialRepository.findByPublicCode(publicCode).isPresent()) {
+                    publicCode = generatePublicCode();
+                }
+
+                Material material = new Material(
+                        publicCode,
+                        materialType,
+                        brand,
+                        model,
+                        serialNumber,
+                        office,
+                        status
+                );
+                material.setPurchasePrice(purchasePrice);
+                material.setPurchaseDate(purchaseDate);
+                material.setActive(true);
+                Material savedMaterial = materialRepository.save(material);
+
+                MaterialHistory history = new MaterialHistory(
+                        savedMaterial,
+                        "MATERIAL_IMPORTED",
+                        null,
+                        savedMaterial.getStatus(),
+                        null,
+                        savedMaterial.getOffice(),
+                        "Importado vía masiva Excel",
+                        performer
+                );
+                materialHistoryRepository.save(history);
+
+                String newValueJson = toJson(new MaterialResponse(savedMaterial));
+                auditService.logEvent("Material", savedMaterial.getPublicCode(), "MATERIAL_IMPORTED", "USER", performerPublicId, ip, userAgent, null, newValueJson);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error reading Excel file: " + e.getMessage(), e);
+        }
+    }
+
+    private String getCellValueAsString(org.apache.poi.ss.usermodel.Cell cell) {
+        if (cell == null) {
+            return "";
+        }
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell)) {
+                    return cell.getLocalDateTimeCellValue().toLocalDate().toString();
+                }
+                double val = cell.getNumericCellValue();
+                if (val == (long) val) {
+                    return String.valueOf((long) val);
+                }
+                return String.valueOf(val);
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                try {
+                    return cell.getStringCellValue();
+                } catch (Exception e) {
+                    return String.valueOf(cell.getNumericCellValue());
+                }
+            default:
+                return "";
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportMaterialsToExcel() {
+        List<Material> materials = materialRepository.findAll();
+        try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+             java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+             
+            org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Inventario");
+            
+            org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
+            String[] columns = {"Código Público", "Tipo Material", "Marca", "Modelo", "Nº Serie", "Oficina", "Estado", "Precio Adquisición", "Fecha Adquisición", "Activo"};
+            for (int i = 0; i < columns.length; i++) {
+                org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                
+                org.apache.poi.ss.usermodel.CellStyle style = workbook.createCellStyle();
+                org.apache.poi.ss.usermodel.Font font = workbook.createFont();
+                font.setBold(true);
+                style.setFont(font);
+                cell.setCellStyle(style);
+            }
+            
+            int rowIdx = 1;
+            for (Material material : materials) {
+                org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(material.getPublicCode());
+                row.createCell(1).setCellValue(material.getMaterialType());
+                row.createCell(2).setCellValue(material.getBrand() != null ? material.getBrand() : "");
+                row.createCell(3).setCellValue(material.getModel() != null ? material.getModel() : "");
+                row.createCell(4).setCellValue(material.getSerialNumber() != null ? material.getSerialNumber() : "");
+                row.createCell(5).setCellValue(material.getOffice() != null ? material.getOffice().getName() : "");
+                row.createCell(6).setCellValue(material.getStatus().name());
+                
+                if (material.getPurchasePrice() != null) {
+                    row.createCell(7).setCellValue(material.getPurchasePrice().doubleValue());
+                } else {
+                    row.createCell(7).setCellValue("");
+                }
+                
+                if (material.getPurchaseDate() != null) {
+                    row.createCell(8).setCellValue(material.getPurchaseDate().toString());
+                } else {
+                    row.createCell(8).setCellValue("");
+                }
+                
+                row.createCell(9).setCellValue(material.isActive() ? "SÍ" : "NO");
+            }
+            
+            for (int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+            
+            workbook.write(out);
+            return out.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating Excel file: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportMaterialsToPdf() {
+        List<Material> materials = materialRepository.findAll();
+        try (java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+            com.lowagie.text.Document document = new com.lowagie.text.Document(com.lowagie.text.PageSize.A4.rotate());
+            com.lowagie.text.pdf.PdfWriter.getInstance(document, out);
+            document.open();
+            
+            com.lowagie.text.Font titleFont = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA_BOLD, 18);
+            com.lowagie.text.Font headerFont = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA_BOLD, 9);
+            com.lowagie.text.Font dataFont = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA, 8);
+            
+            com.lowagie.text.Paragraph title = new com.lowagie.text.Paragraph("GESTION DE INVENTARIO - Reporte de Inventario de Materiales", titleFont);
+            title.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
+            title.setSpacingAfter(20);
+            document.add(title);
+            
+            com.lowagie.text.pdf.PdfPTable table = new com.lowagie.text.pdf.PdfPTable(10);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{2.5f, 1.5f, 1.2f, 1.2f, 1.5f, 1.5f, 1.2f, 1.0f, 1.2f, 0.7f});
+            
+            String[] headers = {"Código Público", "Tipo", "Marca", "Modelo", "Nº Serie", "Oficina", "Estado", "Precio", "Fecha Compra", "Activo"};
+            for (String columnHeader : headers) {
+                com.lowagie.text.pdf.PdfPCell cell = new com.lowagie.text.pdf.PdfPCell(new com.lowagie.text.Phrase(columnHeader, headerFont));
+                cell.setBackgroundColor(java.awt.Color.LIGHT_GRAY);
+                cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_CENTER);
+                table.addCell(cell);
+            }
+            
+            for (Material material : materials) {
+                table.addCell(new com.lowagie.text.Phrase(material.getPublicCode(), dataFont));
+                table.addCell(new com.lowagie.text.Phrase(material.getMaterialType(), dataFont));
+                table.addCell(new com.lowagie.text.Phrase(material.getBrand() != null ? material.getBrand() : "", dataFont));
+                table.addCell(new com.lowagie.text.Phrase(material.getModel() != null ? material.getModel() : "", dataFont));
+                table.addCell(new com.lowagie.text.Phrase(material.getSerialNumber() != null ? material.getSerialNumber() : "", dataFont));
+                table.addCell(new com.lowagie.text.Phrase(material.getOffice() != null ? material.getOffice().getName() : "", dataFont));
+                table.addCell(new com.lowagie.text.Phrase(material.getStatus().name(), dataFont));
+                
+                String priceStr = material.getPurchasePrice() != null ? String.format("%.2f €", material.getPurchasePrice().doubleValue()) : "-";
+                table.addCell(new com.lowagie.text.Phrase(priceStr, dataFont));
+                
+                String dateStr = material.getPurchaseDate() != null ? material.getPurchaseDate().toString() : "-";
+                table.addCell(new com.lowagie.text.Phrase(dateStr, dataFont));
+                
+                table.addCell(new com.lowagie.text.Phrase(material.isActive() ? "SÍ" : "NO", dataFont));
+            }
+            
+            document.add(table);
+            document.close();
+            return out.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating PDF file: " + e.getMessage(), e);
+        }
     }
 }

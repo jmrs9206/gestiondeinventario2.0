@@ -4,6 +4,8 @@ import com.stockflow.inventory.common.entity.MaterialStatus;
 import com.stockflow.inventory.materials.entity.Material;
 import com.stockflow.inventory.offices.dto.OfficeResponse;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class MaterialResponse {
@@ -16,6 +18,8 @@ public class MaterialResponse {
     private String officePublicId;
     private String officeName;
     private MaterialStatus status;
+    private BigDecimal purchasePrice;
+    private LocalDate purchaseDate;
     private LocalDateTime qrGeneratedAt;
     private Integer qrVersion;
     private boolean active;
@@ -37,6 +41,8 @@ public class MaterialResponse {
             this.officeName = material.getOffice().getName();
         }
         this.status = material.getStatus();
+        this.purchasePrice = material.getPurchasePrice();
+        this.purchaseDate = material.getPurchaseDate();
         this.qrGeneratedAt = material.getQrGeneratedAt();
         this.qrVersion = material.getQrVersion();
         this.active = material.isActive();
@@ -115,6 +121,22 @@ public class MaterialResponse {
 
     public void setStatus(MaterialStatus status) {
         this.status = status;
+    }
+
+    public BigDecimal getPurchasePrice() {
+        return purchasePrice;
+    }
+
+    public void setPurchasePrice(BigDecimal purchasePrice) {
+        this.purchasePrice = purchasePrice;
+    }
+
+    public LocalDate getPurchaseDate() {
+        return purchaseDate;
+    }
+
+    public void setPurchaseDate(LocalDate purchaseDate) {
+        this.purchaseDate = purchaseDate;
     }
 
     public LocalDateTime getQrGeneratedAt() {

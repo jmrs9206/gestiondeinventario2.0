@@ -4,6 +4,8 @@ import com.stockflow.inventory.common.entity.BaseEntity;
 import com.stockflow.inventory.common.entity.MaterialStatus;
 import com.stockflow.inventory.offices.entity.Office;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -36,6 +38,12 @@ public class Material extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private MaterialStatus status;
+
+    @Column(name = "purchase_price", precision = 15, scale = 2)
+    private BigDecimal purchasePrice;
+
+    @Column(name = "purchase_date")
+    private LocalDate purchaseDate;
 
     @Column(name = "qr_generated_at")
     private LocalDateTime qrGeneratedAt;
@@ -121,6 +129,22 @@ public class Material extends BaseEntity {
 
     public void setStatus(MaterialStatus status) {
         this.status = status;
+    }
+
+    public BigDecimal getPurchasePrice() {
+        return purchasePrice;
+    }
+
+    public void setPurchasePrice(BigDecimal purchasePrice) {
+        this.purchasePrice = purchasePrice;
+    }
+
+    public LocalDate getPurchaseDate() {
+        return purchaseDate;
+    }
+
+    public void setPurchaseDate(LocalDate purchaseDate) {
+        this.purchaseDate = purchaseDate;
     }
 
     public LocalDateTime getQrGeneratedAt() {

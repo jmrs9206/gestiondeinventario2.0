@@ -175,7 +175,7 @@ public class UserService {
         User user = userRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with public ID: " + publicId));
 
-        if (user.getEmail().equalsIgnoreCase("admin@tuempresa.com")) {
+        if (user.getEmail().equalsIgnoreCase("admin@juliodriguez.dev") || user.getEmail().equalsIgnoreCase("admin@tuempresa.com")) {
             throw new ConflictException("No se permite cambiar la contraseña del administrador principal del sistema desde el panel.");
         }
 
@@ -187,6 +187,30 @@ public class UserService {
 
         String newValueJson = "{\"password\": \"[PROTECTED]\"}";
         auditService.logEvent("User", updatedUser.getPublicId(), "PASSWORD_CHANGED", "USER", performerPublicId, ip, userAgent, oldValueJson, newValueJson);
+
+        return new UserResponse(updatedUser);
+    }
+
+    @Transactional
+    public UserResponse sendPasswordResetEmail(String publicId, String performerPublicId, String ip, String userAgent) {
+        User user = userRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with public ID: " + publicId));
+
+        if (user.getEmail().equalsIgnoreCase("admin@juliodriguez.dev") || user.getEmail().equalsIgnoreCase("admin@tuempresa.com")) {
+            throw new ConflictException("No se permite restablecer la contraseña del administrador principal del sistema.");
+        }
+
+        String oldValueJson = toJson(new UserResponse(user));
+
+        user.setInvitationToken(UUID.randomUUID().toString());
+        user.setInvitationTokenExpiry(java.time.LocalDateTime.now().plusHours(24));
+        user.setMustChangePassword(true);
+        User updatedUser = userRepository.save(user);
+
+        emailService.sendInvitationEmail(updatedUser.getEmail(), updatedUser.getFirstName(), updatedUser.getLastName(), updatedUser.getInvitationToken());
+
+        String newValueJson = toJson(new UserResponse(updatedUser));
+        auditService.logEvent("User", updatedUser.getPublicId(), "PASSWORD_RESET_REQUESTED", "USER", performerPublicId, ip, userAgent, oldValueJson, newValueJson);
 
         return new UserResponse(updatedUser);
     }

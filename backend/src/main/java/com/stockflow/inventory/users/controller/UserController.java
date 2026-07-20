@@ -93,6 +93,19 @@ public class UserController {
         return ResponseEntity.ok(new ApiResponse<>(response));
     }
 
+    @PostMapping("/{publicId}/password-reset")
+    @PreAuthorize("hasAuthority('UPDATE_USER')")
+    public ResponseEntity<ApiResponse<UserResponse>> sendPasswordReset(
+            @PathVariable String publicId,
+            @AuthenticationPrincipal User performer,
+            HttpServletRequest servletRequest
+    ) {
+        String ip = getClientIp(servletRequest);
+        String userAgent = servletRequest.getHeader("User-Agent");
+        UserResponse response = userService.sendPasswordResetEmail(publicId, performer.getPublicId(), ip, userAgent);
+        return ResponseEntity.ok(new ApiResponse<>(response));
+    }
+
     private String getClientIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {

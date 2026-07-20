@@ -18,4 +18,13 @@ public abstract class AbstractIntegrationTest {
             .withDatabaseName("vd_inventory_test")
             .withUsername("testuser")
             .withPassword("testpass");
+
+    public static boolean isDockerAvailable() {
+        try {
+            org.testcontainers.DockerClientFactory.instance().client();
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
 }

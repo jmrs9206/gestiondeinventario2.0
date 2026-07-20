@@ -46,6 +46,7 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
   const [status, setStatus] = useState('');
   const [officeId, setOfficeId] = useState('');
   const [decommissionComment, setDecommissionComment] = useState('');
+  const [updateComment, setUpdateComment] = useState('');
   const [saving, setSaving] = useState(false);
 
   const isMountedRef = useRef(true);
@@ -65,6 +66,8 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
       setStatus(mat.status);
       setOfficeId(mat.officePublicId || '');
       setOffices(offs.content || []);
+      setDecommissionComment('');
+      setUpdateComment('');
     } catch (err: unknown) {
       if (!isMountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Error al cargar el material escaneado.');
@@ -96,6 +99,10 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
       setError('Es obligatorio indicar un comentario para dar de baja el material.');
       return;
     }
+    if (status !== 'BAJA' && !updateComment.trim()) {
+      setError('Es obligatorio indicar un comentario para justificar los cambios.');
+      return;
+    }
 
     setSaving(true);
     setError(null);
@@ -117,7 +124,10 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
           serialNumber: material.serialNumber,
           description: material.description,
           status: status,
-          officePublicId: officeId
+          officePublicId: officeId,
+          purchasePrice: material.purchasePrice ?? undefined,
+          purchaseDate: material.purchaseDate ?? undefined,
+          comment: updateComment
         };
         await updateMaterial(publicCode, req);
         setSuccess('Estado e información actualizados con éxito.');
@@ -258,6 +268,22 @@ function MobileScanContent({ publicCode }: { publicCode: string }) {
                         </option>
                       ))}
                     </select>
+                  </div>
+                )}
+
+                {status !== 'BAJA' && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 font-display uppercase tracking-wider">
+                      Comentario de Actualización *
+                    </label>
+                    <textarea
+                      required
+                      value={updateComment}
+                      onChange={(e) => setUpdateComment(e.target.value)}
+                      placeholder="Motivo del cambio de oficina/estado..."
+                      rows={2}
+                      className="w-full bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-sm focus:outline-none focus:border-zinc-400 text-zinc-900 dark:text-zinc-50 resize-none font-medium"
+                    />
                   </div>
                 )}
 
