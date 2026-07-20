@@ -29,10 +29,16 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtService jwtService;
+    private final com.stockflow.inventory.auth.service.TokenBlacklistService tokenBlacklistService;
 
-    public AuthController(AuthService authService, JwtService jwtService) {
+    public AuthController(
+            AuthService authService,
+            JwtService jwtService,
+            com.stockflow.inventory.auth.service.TokenBlacklistService tokenBlacklistService
+    ) {
         this.authService = authService;
         this.jwtService = jwtService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @PostMapping("/login")
